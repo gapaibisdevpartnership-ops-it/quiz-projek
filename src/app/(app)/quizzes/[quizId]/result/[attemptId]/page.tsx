@@ -5,6 +5,7 @@ import { getMyAttempt } from "@/features/attempts/service";
 import { getMyAssignedQuiz } from "@/features/assignments/service";
 import { getQuiz } from "@/features/quizzes/service";
 import { isAdminRole } from "@/lib/constants";
+import { scoreLabel } from "@/lib/scoring";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert } from "@/components/ui/alert";
 
@@ -24,7 +25,9 @@ export default async function ResultPage({
     : await getMyAssignedQuiz(quizId);
 
   const pending = attempt.status === "pending_review";
-  const finalized = attempt.status === "submitted";
+  const admin = isAdminRole(profile.role);
+  // Sales only see numbers when the quiz allows it.
+  const showNumbers = admin || (quiz?.showResult ?? false);
 
   return (
     <div className="mx-auto max-w-lg space-y-6">
@@ -52,26 +55,30 @@ export default async function ResultPage({
           <dl className="divide-y text-sm">
             {[
               ["Status", attempt.status.replace("_", " ")],
-              [
-                "Score",
-                finalized && attempt.finalScore != null
-                  ? `${attempt.finalScore} / ${attempt.totalPoints ?? "—"}`
-                  : pending
-                    ? "Awaiting grading"
-                    : "Scoring in a later phase",
-              ],
-              [
-                "Percentage",
-                attempt.percentage != null ? `${attempt.percentage}%` : "—",
-              ],
-              [
-                "Result",
-                attempt.passed == null
-                  ? "—"
-                  : attempt.passed
-                    ? "Passed"
-                    : "Not passed",
-              ],
+              ...(showNumbers
+                ? ([
+                    [
+                      "Score",
+                      pending
+                        ? "Awaiting grading"
+                        : scoreLabel(attempt.finalScore, attempt.totalPoints),
+                    ],
+                    [
+                      "Percentage",
+                      attempt.percentage != null
+                        ? `${attempt.percentage}%`
+                        : "—",
+                    ],
+                    [
+                      "Result",
+                      attempt.passed == null
+                        ? "—"
+                        : attempt.passed
+                          ? "Passed"
+                          : "Not passed",
+                    ],
+                  ] as [string, string][])
+                : []),
             ].map(([k, v]) => (
               <div key={k} className="flex justify-between py-2">
                 <dt className="text-muted-foreground">{k}</dt>
@@ -79,12 +86,13 @@ export default async function ResultPage({
               </div>
             ))}
           </dl>
+          {!showNumbers ? (
+            <p className="text-muted-foreground mt-3 text-xs">
+              Your trainer has not enabled score display for this quiz.
+            </p>
+          ) : null}
         </CardContent>
       </Card>
-
-      <p className="text-muted-foreground text-xs">
-        Objective scoring and pass/fail are calculated server-side in Phase 6.
-      </p>
     </div>
   );
 }
