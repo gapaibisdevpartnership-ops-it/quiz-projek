@@ -1,7 +1,40 @@
 # Report — Vercel Deployment Setup
 
 **Date:** 2026-09-07
-**Status:** 🟡 Ready to deploy — needs a Vercel token or a manual `vercel` run
+**Status:** ✅ Deployed to production — smoke test green
+
+## Live deployment
+
+| | |
+| --- | --- |
+| Production URL | https://quiz-projek.vercel.app |
+| Vercel project | `gapaibisdevpartnership-ops-it/quiz-projek` |
+| Region | `sin1` |
+| Deployment id | `dpl_8ZazL9jWbp2Ud4kfq4RZWRjHcWCt` |
+
+Smoke test (`node scripts/smoke.mjs https://quiz-projek.vercel.app`):
+
+```
+✔ GET /api/health → 200 ok          (all 3 env vars wired, incl. service role)
+✔ GET /login → 200 with sign-in form
+✔ GET /dashboard (no session) → redirects to /login
+All smoke checks passed.
+```
+
+### Env vars set on Vercel (production + preview + development)
+
+| Variable | Type |
+| --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | config |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | config (public by design) |
+| `SUPABASE_SERVICE_ROLE_KEY` | secret |
+
+Note: the Vercel CLI now refuses a `NEXT_PUBLIC_`-prefixed credential-looking
+value unless you pass `--type config` (expose) or rename with `--type secret`.
+The anon key is meant to reach the browser, so `--type config` is correct.
+
+---
+
 
 ## What was added
 
