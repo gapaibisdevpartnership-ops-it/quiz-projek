@@ -1,0 +1,7 @@
+tests
+playwright-report
+test-results
+coverage
+docs
+supabase/.temp
+supabase/.branches
