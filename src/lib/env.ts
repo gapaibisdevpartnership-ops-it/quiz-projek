@@ -16,6 +16,8 @@ const clientSchema = z.object({
 
 const serverSchema = clientSchema.extend({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
+  // Optional: guards the /api/cron/expire-attempts sweep. Unset disables it.
+  CRON_SECRET: z.string().min(1).optional(),
 });
 
 function parseOrThrow<T>(schema: z.ZodType<T>, input: unknown, scope: string): T {
@@ -48,6 +50,7 @@ export function getServerEnv() {
       NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
       NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
       SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+      CRON_SECRET: process.env.CRON_SECRET,
     },
     "server",
   );

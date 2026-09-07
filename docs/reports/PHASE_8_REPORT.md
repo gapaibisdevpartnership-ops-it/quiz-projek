@@ -78,10 +78,11 @@ targets. A formal device pass on the player and the admin builder is listed in
 
 ## Follow-ups / known limitations
 
-1. Playwright specs need `npx playwright install chromium` + a run (CI or a
-   machine that can download the browser).
-2. No auto-expire sweep for abandoned `in_progress` attempts past their
-   deadline (client auto-submits if the tab is open).
+1. ~~Playwright specs need a browser download + a run.~~ **Done** — see
+   `docs/reports/PHASE_8_FOLLOWUP_REPORT.md`; 12 E2E pass.
+2. ~~No auto-expire sweep for abandoned `in_progress` attempts.~~ **Done** —
+   `expire_stale_attempts()` in
+   `supabase/migrations/20260907150000_attempt_expiry.sql`.
 3. Multiple-choice scoring is all-or-nothing for V1 by design.
 4. Analytics use table scans — fine at current volume.
 5. Charts (Recharts) not added — tables satisfy V1.

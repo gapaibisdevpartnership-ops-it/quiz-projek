@@ -8,6 +8,21 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 ```
 
+## Optional Variables
+
+```env
+CRON_SECRET=
+```
+
+`CRON_SECRET`:
+
+- server-only shared secret for the scheduled sweep at
+  `/api/cron/expire-attempts` (Vercel Cron, see `vercel.json`);
+- the route requires `Authorization: Bearer $CRON_SECRET` and returns 503 when
+  the variable is unset, so the endpoint is inert until it is configured;
+- set it on Vercel for the production environment when the in-database pg_cron
+  schedule is not used instead.
+
 ## Rules
 
 `SUPABASE_SERVICE_ROLE_KEY`:

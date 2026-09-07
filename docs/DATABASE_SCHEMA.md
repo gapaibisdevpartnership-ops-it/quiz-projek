@@ -233,6 +233,21 @@ Recommended unique:
 unique(quiz_id, user_id, attempt_number)
 ```
 
+`status` values: `in_progress`, `pending_review`, `submitted`, `expired`.
+(`expired` is reserved; the current sweep finalises to `submitted` /
+`pending_review` — see below.)
+
+### Functions — attempt lifecycle
+
+- `attempt_deadline(attempt) -> timestamptz` — the earlier of
+  `started_at + quiz.duration_minutes` and `quiz.end_at`; `null` when the quiz
+  sets neither.
+- `expire_stale_attempts() -> integer` — `service_role` only. Finalises every
+  `in_progress` attempt past its `attempt_deadline` using the Submit Quiz
+  Attempt scoring path, stamping `submitted_at` at the deadline. See
+  `supabase/migrations/20260907150000_attempt_expiry.sql` and
+  `docs/API_CONTRACTS.md` ("Expire Stale Attempts").
+
 ## attempt_questions
 
 ```text

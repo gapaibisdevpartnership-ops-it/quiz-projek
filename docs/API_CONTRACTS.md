@@ -161,3 +161,26 @@ Safe result summary only.
 ### Output
 
 Asset location/reference.
+
+## Expire Stale Attempts
+
+System job, not a user-facing endpoint. Runs as `service_role` via
+`public.expire_stale_attempts()` — driven by Vercel Cron
+(`GET /api/cron/expire-attempts`, `Authorization: Bearer $CRON_SECRET`) or an
+in-database `pg_cron` schedule.
+
+### Behavior
+
+- Selects every `in_progress` attempt whose `attempt_deadline` — the earlier of
+  `started_at + quiz.duration_minutes` and `quiz.end_at` — is in the past.
+- Scores objective questions with the same rules as Submit Quiz Attempt.
+- Stamps `submitted_at` at the deadline (not the sweep time) so
+  `time_spent_seconds` reflects the allotted duration.
+- Attempts containing an essay move to `pending_review`; the rest are finalised
+  to `submitted` via `finalize_attempt`.
+- Idempotent: only `in_progress` rows are touched. Attempts on quizzes with no
+  duration and no `end_at` have no deadline and are never swept.
+
+### Output
+
+Count of attempts finalised.

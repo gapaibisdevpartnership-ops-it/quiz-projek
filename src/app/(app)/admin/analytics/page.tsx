@@ -37,39 +37,41 @@ export default async function AnalyticsPage() {
           {quizzes.length === 0 ? (
             <p className="text-muted-foreground text-sm">No quizzes.</p>
           ) : (
-            <table className="w-full text-sm">
-              <thead className="text-muted-foreground text-left text-xs">
-                <tr>
-                  <th className="py-2">Quiz</th>
-                  <th>Status</th>
-                  <th>Attempts</th>
-                  <th>Finished</th>
-                  <th>Pending</th>
-                  <th>Avg</th>
-                  <th>Pass rate</th>
-                </tr>
-              </thead>
-              <tbody>
-                {quizzes.map((q) => (
-                  <tr key={q.quizId} className="border-t">
-                    <td className="py-2">
-                      <Link
-                        href={`/admin/analytics/${q.quizId}`}
-                        className="font-medium hover:underline"
-                      >
-                        {q.title}
-                      </Link>
-                    </td>
-                    <td>{q.status}</td>
-                    <td>{q.attempts}</td>
-                    <td>{q.finished}</td>
-                    <td>{q.pending}</td>
-                    <td>{pct(q.avgPercentage)}</td>
-                    <td>{pct(q.passRate)}</td>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[32rem] text-sm">
+                <thead className="text-muted-foreground text-left text-xs">
+                  <tr>
+                    <th className="py-2">Quiz</th>
+                    <th>Status</th>
+                    <th>Attempts</th>
+                    <th>Finished</th>
+                    <th>Pending</th>
+                    <th>Avg</th>
+                    <th>Pass rate</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {quizzes.map((q) => (
+                    <tr key={q.quizId} className="border-t">
+                      <td className="py-2">
+                        <Link
+                          href={`/admin/analytics/${q.quizId}`}
+                          className="font-medium hover:underline"
+                        >
+                          {q.title}
+                        </Link>
+                      </td>
+                      <td>{q.status}</td>
+                      <td>{q.attempts}</td>
+                      <td>{q.finished}</td>
+                      <td>{q.pending}</td>
+                      <td>{pct(q.avgPercentage)}</td>
+                      <td>{pct(q.passRate)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -82,26 +84,28 @@ export default async function AnalyticsPage() {
           {sales.length === 0 ? (
             <p className="text-muted-foreground text-sm">No sales users.</p>
           ) : (
-            <table className="w-full text-sm">
-              <thead className="text-muted-foreground text-left text-xs">
-                <tr>
-                  <th className="py-2">Name</th>
-                  <th>Attempts</th>
-                  <th>Passed</th>
-                  <th>Avg score</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sales.map((s) => (
-                  <tr key={s.userId} className="border-t">
-                    <td className="py-2 font-medium">{s.name}</td>
-                    <td>{s.attempts}</td>
-                    <td>{s.passed}</td>
-                    <td>{pct(s.avgPercentage)}</td>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[26rem] text-sm">
+                <thead className="text-muted-foreground text-left text-xs">
+                  <tr>
+                    <th className="py-2">Name</th>
+                    <th>Attempts</th>
+                    <th>Passed</th>
+                    <th>Avg score</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {sales.map((s) => (
+                    <tr key={s.userId} className="border-t">
+                      <td className="py-2 font-medium">{s.name}</td>
+                      <td>{s.attempts}</td>
+                      <td>{s.passed}</td>
+                      <td>{pct(s.avgPercentage)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </CardContent>
       </Card>

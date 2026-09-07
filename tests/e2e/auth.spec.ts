@@ -19,14 +19,18 @@ test("invalid credentials show an error and stay on /login", async ({
   page,
 }) => {
   await login(page, "nobody@example.com");
-  await expect(page.getByRole("alert")).toContainText(/incorrect/i);
+  await expect(
+    page.getByRole("alert").filter({ hasText: /incorrect/i }),
+  ).toBeVisible();
   await expect(page).toHaveURL(/\/login/);
 });
 
 test("a trainer signs in and sees admin navigation", async ({ page }) => {
   await login(page, SEED_USERS.trainer.email);
   await expect(page).toHaveURL(/\/dashboard/);
-  await expect(page.getByRole("link", { name: "Question Bank" })).toBeVisible();
+  await expect(
+    page.getByRole("navigation").getByRole("link", { name: "Question Bank" }),
+  ).toBeVisible();
 });
 
 test("a sales user is bounced from an admin route", async ({ page }) => {

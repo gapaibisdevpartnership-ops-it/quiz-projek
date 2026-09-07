@@ -37,10 +37,17 @@ npm run smoke https://<deployment-url>
 
 ## Responsive pass
 
-- Quiz player on a phone: question text, image scaling, answer touch targets,
-  essay textarea, the question navigator.
-- Admin quiz builder and the analytics/results tables at ~1280px and ~768px —
-  tables scroll rather than break the layout.
+- `tests/e2e/responsive.spec.ts` asserts no horizontal overflow on the sales
+  screens and the admin sections at 375px and 1280px — runs with `test:e2e`.
+- Manual, still needed: quiz player on a phone — question text, image scaling,
+  answer touch targets, essay textarea, the question navigator.
+
+## Attempt expiry
+
+- `expire_stale_attempts()` finalises abandoned `in_progress` attempts past
+  their deadline. It runs either from Vercel Cron (`/api/cron/expire-attempts`,
+  needs `CRON_SECRET`) or from an in-database `pg_cron` schedule — confirm
+  exactly one is active for the target environment.
 
 ## Release gate (all must hold)
 
