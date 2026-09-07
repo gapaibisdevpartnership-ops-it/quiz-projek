@@ -95,6 +95,35 @@ d("RLS baseline (docs/SECURITY_RLS.md)", () => {
     });
   });
 
+  describe("attempt snapshots (answer-key protection)", () => {
+    it("a sales user cannot read attempt_questions directly", async () => {
+      const { data, error } = await sales
+        .from("attempt_questions")
+        .select("id, is_correct:sample_answer");
+      if (isMissingTable(error)) return;
+      // Policy is admin-only, so a sales SELECT yields no rows (not an error).
+      expect(data ?? []).toHaveLength(0);
+    });
+
+    it("a sales user cannot read attempt_question_options directly", async () => {
+      const { data, error } = await sales
+        .from("attempt_question_options")
+        .select("id, is_correct");
+      if (isMissingTable(error)) return;
+      expect(data ?? []).toHaveLength(0);
+    });
+
+    it("a sales user cannot insert a quiz_attempt directly", async () => {
+      const { error } = await sales.from("quiz_attempts").insert({
+        quiz_id: "00000000-0000-0000-0000-000000000000",
+        user_id: "00000000-0000-0000-0000-000000000000",
+        attempt_number: 1,
+      });
+      if (isMissingTable(error)) return;
+      expect(error).not.toBeNull();
+    });
+  });
+
   describe("question bank (answer-key protection)", () => {
     it("a sales user cannot read questions", async () => {
       const { data, error } = await sales.from("questions").select("*");

@@ -4,7 +4,8 @@ import { requireProfile } from "@/features/auth/service";
 import { isAdminRole } from "@/lib/constants";
 import { getMyAssignedQuiz } from "@/features/assignments/service";
 import { getQuiz } from "@/features/quizzes/service";
-import { Button } from "@/components/ui/button";
+import { listMyAttempts } from "@/features/attempts/service";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDateTimeUTC } from "@/lib/format";
 
@@ -15,10 +16,14 @@ export default async function QuizDetailPage({
 }) {
   const { quizId } = await params;
   const profile = await requireProfile();
-  const quiz = isAdminRole(profile.role)
-    ? await getQuiz(quizId)
-    : await getMyAssignedQuiz(quizId);
+  const admin = isAdminRole(profile.role);
+  const quiz = admin ? await getQuiz(quizId) : await getMyAssignedQuiz(quizId);
   if (!quiz) notFound();
+
+  const attempts = admin ? [] : await listMyAttempts(quizId);
+  const inProgress = attempts.find((a) => a.status === "in_progress");
+  const used = attempts.length;
+  const canStart = !admin && (inProgress || used < quiz.maxAttempts);
 
   return (
     <div className="space-y-6">
@@ -66,14 +71,58 @@ export default async function QuizDetailPage({
         </CardContent>
       </Card>
 
-      <div>
-        <Button disabled title="Available in Phase 5">
-          Start quiz (coming soon)
-        </Button>
-        <p className="text-muted-foreground mt-2 text-xs">
-          The quiz player, autosave and scoring arrive in Phase 5.
+      {admin ? (
+        <p className="text-muted-foreground text-sm">
+          Admin preview. Use{" "}
+          <Link className="underline" href={`/admin/quizzes/${quizId}/preview`}>
+            the builder preview
+          </Link>{" "}
+          to see the questions; assigned sales users take it from here.
         </p>
-      </div>
+      ) : (
+        <div className="space-y-2">
+          {inProgress ? (
+            <Link
+              href={`/quizzes/${quizId}/attempt/${inProgress.id}`}
+              className={buttonVariants()}
+            >
+              Resume attempt
+            </Link>
+          ) : canStart ? (
+            <Link
+              href={`/quizzes/${quizId}/start`}
+              className={buttonVariants()}
+            >
+              Start quiz
+            </Link>
+          ) : (
+            <p className="text-sm font-medium">
+              You have used all {quiz.maxAttempts} attempt
+              {quiz.maxAttempts === 1 ? "" : "s"}.
+            </p>
+          )}
+          <p className="text-muted-foreground text-xs">
+            {used} of {quiz.maxAttempts} attempt
+            {quiz.maxAttempts === 1 ? "" : "s"} used.
+          </p>
+          {attempts.filter((a) => a.status !== "in_progress").length ? (
+            <ul className="text-sm">
+              {attempts
+                .filter((a) => a.status !== "in_progress")
+                .map((a) => (
+                  <li key={a.id}>
+                    <Link
+                      className="underline"
+                      href={`/quizzes/${quizId}/result/${a.id}`}
+                    >
+                      Attempt #{a.attemptNumber} — {a.status.replace("_", " ")}
+                    </Link>
+                  </li>
+                ))}
+            </ul>
+          ) : null}
+        </div>
+      )}
     </div>
   );
 }
