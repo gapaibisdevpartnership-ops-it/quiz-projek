@@ -5,7 +5,11 @@ import {
   getQuizQuestions,
   totalPoints,
 } from "@/features/quizzes/service";
+import { listQuizAssignments } from "@/features/assignments/service";
+import { listUsers } from "@/features/users/service";
+import { listTeams } from "@/features/teams/service";
 import { QuizStatusActions } from "@/features/quizzes/quiz-status-actions";
+import { QuizAssignments } from "@/features/assignments/quiz-assignments";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -17,7 +21,12 @@ export default async function QuizOverviewPage({
   const { quizId } = await params;
   const quiz = await getQuiz(quizId);
   if (!quiz) notFound();
-  const questions = await getQuizQuestions(quizId);
+  const [questions, assignments, users, teams] = await Promise.all([
+    getQuizQuestions(quizId),
+    listQuizAssignments(quizId),
+    listUsers(),
+    listTeams(),
+  ]);
 
   const facts: [string, string][] = [
     ["Status", quiz.status],
@@ -80,6 +89,24 @@ export default async function QuizOverviewPage({
               </div>
             ))}
           </dl>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Assignments</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <QuizAssignments
+            quizId={quizId}
+            assignments={assignments}
+            users={users}
+            teams={teams}
+          />
+          <p className="text-muted-foreground mt-3 text-xs">
+            Sales users see the quiz only once it is <strong>published</strong>{" "}
+            and assigned to them or one of their teams.
+          </p>
         </CardContent>
       </Card>
 

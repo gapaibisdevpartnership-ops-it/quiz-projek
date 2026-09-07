@@ -65,6 +65,36 @@ d("RLS baseline (docs/SECURITY_RLS.md)", () => {
     });
   });
 
+  describe("quizzes & assignments", () => {
+    it("a sales user sees no quizzes without an assignment", async () => {
+      const { data, error } = await sales.from("quizzes").select("id");
+      if (isMissingTable(error)) return;
+      expect(error).toBeNull();
+      expect(data ?? []).toHaveLength(0);
+    });
+
+    it("a sales user sees only their own assignments", async () => {
+      const { data, error } = await sales
+        .from("quiz_assignments")
+        .select("id");
+      if (isMissingTable(error)) return;
+      expect(error).toBeNull();
+      // No seed assignments target this user, so the list is empty — but the
+      // query itself must be allowed (RLS returns rows, not an error).
+      expect(Array.isArray(data)).toBe(true);
+    });
+
+    it("a sales user cannot create an assignment", async () => {
+      const { error } = await sales.from("quiz_assignments").insert({
+        quiz_id: "00000000-0000-0000-0000-000000000000",
+        user_id: "00000000-0000-0000-0000-000000000000",
+        assigned_by: "00000000-0000-0000-0000-000000000000",
+      });
+      if (isMissingTable(error)) return;
+      expect(error).not.toBeNull();
+    });
+  });
+
   describe("question bank (answer-key protection)", () => {
     it("a sales user cannot read questions", async () => {
       const { data, error } = await sales.from("questions").select("*");

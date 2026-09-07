@@ -264,3 +264,84 @@ export function mapQuizQuestion(row: QuizQuestionRow): QuizQuestion {
     sortOrder: row.sort_order,
   };
 }
+
+// --- Teams, users, assignments (Phase 4) ---------------------------
+
+export interface TeamRow {
+  id: string;
+  name: string;
+  description: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export function mapTeam(row: TeamRow): Team {
+  return {
+    id: row.id,
+    name: row.name,
+    description: row.description,
+    isActive: row.is_active,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export interface TeamMember {
+  id: string;
+  teamId: string;
+  userId: string;
+  joinedAt: string;
+}
+
+export interface TeamMemberRow {
+  id: string;
+  team_id: string;
+  user_id: string;
+  joined_at: string;
+}
+
+export function mapTeamMember(row: TeamMemberRow): TeamMember {
+  return {
+    id: row.id,
+    teamId: row.team_id,
+    userId: row.user_id,
+    joinedAt: row.joined_at,
+  };
+}
+
+export type AssignmentTarget =
+  | { mode: "user"; userId: string }
+  | { mode: "team"; teamId: string };
+
+export interface Assignment {
+  id: string;
+  quizId: string;
+  userId: string | null;
+  teamId: string | null;
+  assignedBy: string;
+  assignedAt: string;
+  dueAt: string | null;
+}
+
+export interface AssignmentRow {
+  id: string;
+  quiz_id: string;
+  user_id: string | null;
+  team_id: string | null;
+  assigned_by: string;
+  assigned_at: string;
+  due_at: string | null;
+}
+
+export function mapAssignment(row: AssignmentRow): Assignment {
+  return {
+    id: row.id,
+    quizId: row.quiz_id,
+    userId: row.user_id,
+    teamId: row.team_id,
+    assignedBy: row.assigned_by,
+    assignedAt: row.assigned_at,
+    dueAt: row.due_at,
+  };
+}
