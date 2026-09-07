@@ -6,6 +6,7 @@ import { getMyAssignedQuiz } from "@/features/assignments/service";
 import { getQuiz } from "@/features/quizzes/service";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatDateTimeUTC } from "@/lib/format";
 
 export default async function QuizDetailPage({
   params,
@@ -56,10 +57,10 @@ export default async function QuizDetailPage({
             </li>
             <li>Attempts allowed: {quiz.maxAttempts}</li>
             {quiz.startAt ? (
-              <li>Opens: {new Date(quiz.startAt).toLocaleString()}</li>
+              <li>Opens: {formatDateTimeUTC(quiz.startAt)}</li>
             ) : null}
             {quiz.endAt ? (
-              <li>Closes: {new Date(quiz.endAt).toLocaleString()}</li>
+              <li>Closes: {formatDateTimeUTC(quiz.endAt)}</li>
             ) : null}
           </ul>
         </CardContent>

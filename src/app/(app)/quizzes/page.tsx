@@ -4,6 +4,7 @@ import { isAdminRole } from "@/lib/constants";
 import { listMyAssignedQuizzes } from "@/features/assignments/service";
 import { listQuizzes } from "@/features/quizzes/service";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatDateTimeUTC } from "@/lib/format";
 
 export default async function QuizzesPage() {
   const profile = await requireProfile();
@@ -47,7 +48,7 @@ export default async function QuizzesPage() {
                   </li>
                   <li>Attempts allowed: {q.maxAttempts}</li>
                   {q.endAt ? (
-                    <li>Closes: {new Date(q.endAt).toLocaleString()}</li>
+                    <li>Closes: {formatDateTimeUTC(q.endAt)}</li>
                   ) : null}
                 </ul>
                 <Link

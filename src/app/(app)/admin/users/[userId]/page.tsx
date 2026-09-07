@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getUser } from "@/features/users/service";
 import { listTeams } from "@/features/teams/service";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatDateTimeUTC } from "@/lib/format";
 
 export default async function UserDetailPage({
   params,
@@ -19,7 +20,7 @@ export default async function UserDetailPage({
     ["Email", user.email],
     ["Role", user.role],
     ["Status", user.status],
-    ["Joined", new Date(user.createdAt).toLocaleString()],
+    ["Joined", formatDateTimeUTC(user.createdAt)],
   ];
 
   return (

@@ -10,6 +10,7 @@ import { listUsers } from "@/features/users/service";
 import { listTeams } from "@/features/teams/service";
 import { QuizStatusActions } from "@/features/quizzes/quiz-status-actions";
 import { QuizAssignments } from "@/features/assignments/quiz-assignments";
+import { formatDateTimeUTC } from "@/lib/format";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -38,9 +39,7 @@ export default async function QuizOverviewPage({
     [
       "Window",
       quiz.startAt || quiz.endAt
-        ? `${quiz.startAt ? new Date(quiz.startAt).toLocaleString() : "—"} → ${
-            quiz.endAt ? new Date(quiz.endAt).toLocaleString() : "—"
-          }`
+        ? `${formatDateTimeUTC(quiz.startAt)} → ${formatDateTimeUTC(quiz.endAt)}`
         : "Always open",
     ],
   ];
