@@ -1,0 +1,100 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import {
+  getQuiz,
+  getQuizQuestions,
+  totalPoints,
+} from "@/features/quizzes/service";
+import { QuizStatusActions } from "@/features/quizzes/quiz-status-actions";
+import { buttonVariants } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+export default async function QuizOverviewPage({
+  params,
+}: {
+  params: Promise<{ quizId: string }>;
+}) {
+  const { quizId } = await params;
+  const quiz = await getQuiz(quizId);
+  if (!quiz) notFound();
+  const questions = await getQuizQuestions(quizId);
+
+  const facts: [string, string][] = [
+    ["Status", quiz.status],
+    ["Questions", String(questions.length)],
+    ["Total points", String(totalPoints(questions))],
+    ["Passing score", `${quiz.passingScore}%`],
+    ["Max attempts", String(quiz.maxAttempts)],
+    ["Duration", quiz.durationMinutes ? `${quiz.durationMinutes} min` : "Untimed"],
+    [
+      "Window",
+      quiz.startAt || quiz.endAt
+        ? `${quiz.startAt ? new Date(quiz.startAt).toLocaleString() : "—"} → ${
+            quiz.endAt ? new Date(quiz.endAt).toLocaleString() : "—"
+          }`
+        : "Always open",
+    ],
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-semibold">{quiz.title}</h1>
+          {quiz.description ? (
+            <p className="text-muted-foreground text-sm">{quiz.description}</p>
+          ) : null}
+        </div>
+        <div className="flex gap-2">
+          <Link
+            href={`/admin/quizzes/${quizId}/edit`}
+            className={buttonVariants({ variant: "outline" })}
+          >
+            Edit settings
+          </Link>
+          <Link
+            href={`/admin/quizzes/${quizId}/questions`}
+            className={buttonVariants({ variant: "outline" })}
+          >
+            Edit questions
+          </Link>
+          <Link
+            href={`/admin/quizzes/${quizId}/preview`}
+            className={buttonVariants()}
+          >
+            Preview
+          </Link>
+        </div>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Overview</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <dl className="grid gap-x-8 gap-y-2 text-sm sm:grid-cols-2">
+            {facts.map(([k, v]) => (
+              <div key={k} className="flex justify-between border-b py-1">
+                <dt className="text-muted-foreground">{k}</dt>
+                <dd className="font-medium">{v}</dd>
+              </div>
+            ))}
+          </dl>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Lifecycle</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <QuizStatusActions quizId={quizId} status={quiz.status} />
+          <p className="text-muted-foreground mt-3 text-xs">
+            A quiz needs at least one question before it can be published.
+            Archived quizzes cannot start new attempts.
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

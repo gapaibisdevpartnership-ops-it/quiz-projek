@@ -1,5 +1,6 @@
 import type {
   QuestionType,
+  QuizStatus,
   Role,
   UserStatus,
 } from "@/lib/constants";
@@ -160,5 +161,106 @@ export function mapQuestion(row: QuestionRow): Question {
     createdBy: row.created_by,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+  };
+}
+
+// --- Quiz builder (Phase 3) -----------------------------------------
+
+export interface Quiz {
+  id: string;
+  categoryId: string | null;
+  title: string;
+  description: string | null;
+  instructions: string | null;
+  coverImageUrl: string | null;
+  status: QuizStatus;
+  durationMinutes: number | null;
+  passingScore: number;
+  maxAttempts: number;
+  shuffleQuestions: boolean;
+  shuffleAnswers: boolean;
+  showResult: boolean;
+  showCorrectAnswer: boolean;
+  startAt: string | null;
+  endAt: string | null;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface QuizQuestion {
+  id: string;
+  quizId: string;
+  questionId: string;
+  points: number;
+  sortOrder: number;
+}
+
+/** A quiz_questions row joined with its bank question, for the builder UI. */
+export interface QuizQuestionWithQuestion extends QuizQuestion {
+  question: Question;
+}
+
+export interface QuizRow {
+  id: string;
+  category_id: string | null;
+  title: string;
+  description: string | null;
+  instructions: string | null;
+  cover_image_url: string | null;
+  status: QuizStatus;
+  duration_minutes: number | null;
+  passing_score: number;
+  max_attempts: number;
+  shuffle_questions: boolean;
+  shuffle_answers: boolean;
+  show_result: boolean;
+  show_correct_answer: boolean;
+  start_at: string | null;
+  end_at: string | null;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface QuizQuestionRow {
+  id: string;
+  quiz_id: string;
+  question_id: string;
+  points: number;
+  sort_order: number;
+}
+
+export function mapQuiz(row: QuizRow): Quiz {
+  return {
+    id: row.id,
+    categoryId: row.category_id,
+    title: row.title,
+    description: row.description,
+    instructions: row.instructions,
+    coverImageUrl: row.cover_image_url,
+    status: row.status,
+    durationMinutes: row.duration_minutes,
+    passingScore: Number(row.passing_score),
+    maxAttempts: row.max_attempts,
+    shuffleQuestions: row.shuffle_questions,
+    shuffleAnswers: row.shuffle_answers,
+    showResult: row.show_result,
+    showCorrectAnswer: row.show_correct_answer,
+    startAt: row.start_at,
+    endAt: row.end_at,
+    createdBy: row.created_by,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export function mapQuizQuestion(row: QuizQuestionRow): QuizQuestion {
+  return {
+    id: row.id,
+    quizId: row.quiz_id,
+    questionId: row.question_id,
+    points: Number(row.points),
+    sortOrder: row.sort_order,
   };
 }
