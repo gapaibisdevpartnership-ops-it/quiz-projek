@@ -21,10 +21,20 @@ async function login(page: import("@playwright/test").Page, email: string) {
 }
 
 async function expectNoHorizontalScroll(page: import("@playwright/test").Page, where: string) {
-  const overflowBy = await page.evaluate(
-    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
-  );
-  expect(overflowBy, `${where} overflows horizontally by ${overflowBy}px`).toBeLessThanOrEqual(1);
+  // Let hydration settle — the app shell swaps its sidebar between the desktop
+  // and mobile layouts on the client after mount.
+  await page.waitForLoadState("networkidle");
+  await expect
+    .poll(
+      () =>
+        page.evaluate(
+          () =>
+            document.documentElement.scrollWidth -
+            document.documentElement.clientWidth,
+        ),
+      { message: `${where} overflows horizontally`, timeout: 5000 },
+    )
+    .toBeLessThanOrEqual(1);
 }
 
 for (const vp of VIEWPORTS) {
