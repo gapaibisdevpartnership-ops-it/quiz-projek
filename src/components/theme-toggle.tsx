@@ -25,15 +25,20 @@ function getSnapshot(): Theme {
 }
 
 function subscribe(onChange: () => void) {
-  window.addEventListener("storage", onChange);
-  window.addEventListener("themechange", onChange);
+  // Re-apply the class on any theme change (this tab, another tab, or the OS),
+  // then let React re-read the snapshot for the icon.
+  const handler = () => {
+    apply(getSnapshot());
+    onChange();
+  };
+  window.addEventListener("storage", handler);
+  window.addEventListener("themechange", handler);
   const mql = window.matchMedia("(prefers-color-scheme: dark)");
-  const onMedia = () => apply(getSnapshot());
-  mql.addEventListener("change", onMedia);
+  mql.addEventListener("change", handler);
   return () => {
-    window.removeEventListener("storage", onChange);
-    window.removeEventListener("themechange", onChange);
-    mql.removeEventListener("change", onMedia);
+    window.removeEventListener("storage", handler);
+    window.removeEventListener("themechange", handler);
+    mql.removeEventListener("change", handler);
   };
 }
 
