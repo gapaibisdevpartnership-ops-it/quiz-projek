@@ -118,3 +118,39 @@ export async function resetPasswordAction(
   revalidatePath("/", "layout");
   redirect("/dashboard");
 }
+
+/**
+ * The signed-in user chooses their own password (used by /change-password —
+ * both the forced first-login change and a voluntary change). Clears the
+ * `must_change_password` flag on success.
+ */
+export async function changeOwnPasswordAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const parsed = resetPasswordSchema.safeParse({
+    password: formData.get("password"),
+    confirmPassword: formData.get("confirmPassword"),
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const { error } = await supabase.auth.updateUser({
+    password: parsed.data.password,
+  });
+  if (error) {
+    return { error: "Could not update your password. Try again." };
+  }
+
+  await supabase.rpc("clear_must_change_password");
+
+  revalidatePath("/", "layout");
+  redirect("/dashboard");
+}

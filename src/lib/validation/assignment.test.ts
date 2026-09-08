@@ -39,6 +39,7 @@ describe("inviteUserSchema", () => {
         fullName: "Jane",
         email: "jane@example.com",
         role: "sales",
+        password: "temp1234",
       }).success,
     ).toBe(true);
   });
@@ -49,6 +50,25 @@ describe("inviteUserSchema", () => {
         fullName: "Jane",
         email: "jane@example.com",
         role: "owner",
+        password: "temp1234",
+      }).success,
+    ).toBe(false);
+  });
+
+  it("requires a temporary password of at least 8 characters", () => {
+    expect(
+      inviteUserSchema.safeParse({
+        fullName: "Jane",
+        email: "jane@example.com",
+        role: "sales",
+      }).success,
+    ).toBe(false);
+    expect(
+      inviteUserSchema.safeParse({
+        fullName: "Jane",
+        email: "jane@example.com",
+        role: "sales",
+        password: "short",
       }).success,
     ).toBe(false);
   });

@@ -12,6 +12,7 @@ export interface Profile {
   email: string;
   role: Role;
   status: UserStatus;
+  mustChangePassword: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -33,6 +34,7 @@ export interface ProfileRow {
   email: string;
   role: Role;
   status: UserStatus;
+  must_change_password: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -45,6 +47,7 @@ export function mapProfile(row: ProfileRow): Profile {
     email: row.email,
     role: row.role,
     status: row.status,
+    mustChangePassword: row.must_change_password ?? false,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

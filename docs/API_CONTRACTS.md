@@ -166,6 +166,22 @@ Updates `full_name`, `role`, `status` on the target profile in one statement.
 New accounts are always created as `sales` (`handle_new_user` ignores any role in
 auth metadata); `inviteUser` then applies the chosen role with the service role.
 
+## Reset User Password (admin)
+
+`resetUserPassword(userId, { password })` server action — `requireAdmin()`.
+Sets a new temporary password via the service-role Admin API and sets
+`profiles.must_change_password = true`. A plain admin cannot reset a
+`super_admin`'s password. No email is sent; the admin communicates the password
+out of band.
+
+## Change Own Password
+
+`changeOwnPasswordAction` (form on `/change-password`) — the signed-in user sets
+their own password (`supabase.auth.updateUser`) and the flag is cleared via
+`clear_must_change_password()` (`SECURITY DEFINER`, `auth.uid()` only,
+`EXECUTE` granted to `authenticated`). Used both for the forced first-login
+change and voluntary changes. On success → `/dashboard`.
+
 ## Upload Quiz Asset
 
 ### Input

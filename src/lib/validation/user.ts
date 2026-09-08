@@ -5,11 +5,16 @@ export const inviteUserSchema = z.object({
   fullName: z.string().trim().min(1, "Name is required.").max(160),
   email: z.string().trim().email("Enter a valid email address."),
   role: z.enum(ROLES),
-  // Optional: if omitted, a random password is generated and the user must
-  // reset it via "forgot password".
-  password: z.string().min(8, "Use at least 8 characters.").optional(),
+  // Temporary password the admin communicates out-of-band. The user is forced
+  // to change it on first login (profiles.must_change_password).
+  password: z.string().min(8, "Use at least 8 characters."),
 });
 export type InviteUserInput = z.infer<typeof inviteUserSchema>;
+
+export const adminResetPasswordSchema = z.object({
+  password: z.string().min(8, "Use at least 8 characters."),
+});
+export type AdminResetPasswordInput = z.infer<typeof adminResetPasswordSchema>;
 
 export const updateUserSchema = z.object({
   fullName: z.string().trim().min(1, "Name is required.").max(160),

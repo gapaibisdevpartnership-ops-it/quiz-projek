@@ -12,6 +12,12 @@ Login: https://quiz-projek.vercel.app/login (or `npm run dev` → http://localho
 QuizQA!2026
 ```
 
+These QA accounts are seeded with `must_change_password = false`, so they skip
+the forced first-login password change. Real users created through the Users
+screen get a temporary password from the admin and must change it on first
+sign-in (Opsi A — there is no email reset; `/forgot-password` just points to an
+admin).
+
 ## Accounts
 
 | # | Name | Email | Role | Status | Can do |

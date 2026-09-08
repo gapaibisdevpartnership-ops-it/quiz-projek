@@ -57,7 +57,8 @@ export default function LoginPage() {
           <p className="text-muted-foreground text-center text-sm">
             <Link className="underline" href="/forgot-password">
               Forgot your password?
-            </Link>
+            </Link>{" "}
+            Ask an admin to reset it.
           </p>
         </form>
       </CardContent>

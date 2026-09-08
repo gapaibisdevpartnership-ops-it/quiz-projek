@@ -1,12 +1,18 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { hasSupabaseEnv, serviceClient, signInAs } from "../helpers/supabase";
+import {
+  anonClient,
+  hasSupabaseEnv,
+  serviceClient,
+  signInAs,
+} from "../helpers/supabase";
 import { SEED_PASSWORD, SEED_USERS } from "../helpers/seed";
 
 /**
  * P0 hardening — user administration
  * (supabase/migrations/20260908160000_admin_user_rpc.sql,
- * docs/IMPROVEMENT_BACKLOG.md P0 #1–3).
+ * docs/IMPROVEMENT_BACKLOG.md P0 #1–3) + Opsi A password management
+ * (20260908180000_must_change_password.sql).
  */
 
 const d = hasSupabaseEnv ? describe : describe.skip;
@@ -176,5 +182,44 @@ d("admin user administration security", () => {
       new_status: "active",
     });
     expect(error?.message).toMatch(/CANNOT_DEMOTE_SELF/);
+  });
+
+  it("clear_must_change_password only clears the caller's own flag", async () => {
+    // Flag the throwaway user and the trainer.
+    await svc
+      .from("profiles")
+      .update({ must_change_password: true })
+      .in("email", [throwaway.email, SEED_USERS.trainer.email]);
+
+    // The trainer clears theirs — the throwaway's stays set.
+    const cleared = await trainer.rpc("clear_must_change_password");
+    expect(cleared.error).toBeNull();
+
+    const { data } = await svc
+      .from("profiles")
+      .select("email, must_change_password")
+      .in("email", [throwaway.email, SEED_USERS.trainer.email]);
+    const byEmail = Object.fromEntries(
+      data!.map((r) => [r.email, r.must_change_password]),
+    );
+    expect(byEmail[SEED_USERS.trainer.email]).toBe(false);
+    expect(byEmail[throwaway.email]).toBe(true);
+
+    // The throwaway user clears their own.
+    const asUser = anonClient();
+    await asUser.auth.signInWithPassword({
+      email: throwaway.email,
+      password: SEED_PASSWORD,
+    });
+    const selfClear = await asUser.rpc("clear_must_change_password");
+    expect(selfClear.error).toBeNull();
+    await asUser.auth.signOut();
+
+    const { data: after } = await svc
+      .from("profiles")
+      .select("must_change_password")
+      .eq("email", throwaway.email)
+      .single();
+    expect(after!.must_change_password).toBe(false);
   });
 });

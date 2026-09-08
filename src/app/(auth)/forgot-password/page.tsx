@@ -1,11 +1,4 @@
-"use client";
-
-import { useActionState } from "react";
 import Link from "next/link";
-import {
-  forgotPasswordAction,
-  type ActionState,
-} from "@/features/auth/actions";
 import {
   Card,
   CardContent,
@@ -13,51 +6,27 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Alert } from "@/components/ui/alert";
-import { SubmitButton } from "@/components/submit-button";
-
-const initial: ActionState = {};
 
 export default function ForgotPasswordPage() {
-  const [state, action] = useActionState(forgotPasswordAction, initial);
-
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Reset password</CardTitle>
+        <CardTitle>Forgot your password?</CardTitle>
         <CardDescription>
-          We&apos;ll email you a link to set a new password.
+          This is an internal tool with no automated email reset.
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <form action={action} className="space-y-4">
-          {state.error ? (
-            <Alert variant="destructive">{state.error}</Alert>
-          ) : null}
-          {state.success ? (
-            <Alert variant="success">{state.success}</Alert>
-          ) : null}
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              required
-            />
-          </div>
-          <SubmitButton className="w-full" pendingText="Sending…">
-            Send reset link
-          </SubmitButton>
-          <p className="text-muted-foreground text-center text-sm">
-            <Link className="underline" href="/login">
-              Back to sign in
-            </Link>
-          </p>
-        </form>
+      <CardContent className="space-y-4 text-sm">
+        <p>
+          Ask your trainer or a super admin to set a new temporary password for
+          your account from the Users screen. You&apos;ll be asked to choose your
+          own password the next time you sign in.
+        </p>
+        <p className="text-muted-foreground text-center">
+          <Link className="underline" href="/login">
+            Back to sign in
+          </Link>
+        </p>
       </CardContent>
     </Card>
   );

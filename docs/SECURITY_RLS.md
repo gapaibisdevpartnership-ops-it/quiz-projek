@@ -75,6 +75,18 @@ Authorization must still be enforced by RLS/server logic.
 - New accounts are always created as `sales` — `handle_new_user()` ignores any
   role supplied in auth user metadata.
 
+### Passwords (Opsi A — no email/SMTP)
+
+- No automated email reset. An admin sets a **temporary password** when creating
+  a user, and can reset it later from the Users list (`resetUserPassword` →
+  service-role Admin API). A plain admin cannot reset a `super_admin`'s
+  password.
+- `profiles.must_change_password` is set on both actions. While it is `true`,
+  `(app)/layout.tsx` redirects the user to `/change-password`; they clear it by
+  choosing their own password (`clear_must_change_password()`, keyed to
+  `auth.uid()`), so the admin never holds a live credential.
+- `/forgot-password` is informational only (directs the user to an admin).
+
 ## Answer-Key Protection
 
 Before result disclosure is permitted, sales responses must not include:

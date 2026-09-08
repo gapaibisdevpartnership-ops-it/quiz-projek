@@ -5,8 +5,10 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/features/auth/service";
 import {
+  adminResetPasswordSchema,
   inviteUserSchema,
   updateUserSchema,
+  type AdminResetPasswordInput,
   type InviteUserInput,
   type UpdateUserInput,
 } from "@/lib/validation/user";
@@ -57,12 +59,10 @@ export async function inviteUser(
   }
 
   const admin = createAdminClient();
-  const password =
-    parsed.data.password ?? `Aa1!${crypto.randomUUID().slice(0, 16)}`;
 
   const { data, error } = await admin.auth.admin.createUser({
     email: parsed.data.email,
-    password,
+    password: parsed.data.password,
     email_confirm: true,
     user_metadata: { full_name: parsed.data.fullName },
   });
@@ -73,10 +73,14 @@ export async function inviteUser(
   // The trigger created the profile as 'sales'/'active'. Apply the chosen name
   // and role with the service role (authorization already checked above; this
   // is a brand-new account so the RPC's self / last-super-admin guards don't
-  // apply).
+  // apply). Force a password change on first login.
   const { error: profileError } = await admin
     .from("profiles")
-    .update({ full_name: parsed.data.fullName, role: parsed.data.role })
+    .update({
+      full_name: parsed.data.fullName,
+      role: parsed.data.role,
+      must_change_password: true,
+    })
     .eq("user_id", data.user.id);
   if (profileError) {
     revalidatePath("/admin/users");
@@ -87,6 +91,53 @@ export async function inviteUser(
   }
 
   revalidatePath("/admin/users");
+  return { ok: true };
+}
+
+/**
+ * Set a new temporary password for a user and force them to change it on next
+ * login. Admin-only; a plain admin cannot reset a super_admin's password.
+ */
+export async function resetUserPassword(
+  userId: string,
+  input: AdminResetPasswordInput,
+): Promise<UserMutationResult> {
+  const me = await requireAdmin();
+  const parsed = adminResetPasswordSchema.safeParse(input);
+  if (!parsed.success)
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid." };
+
+  const admin = createAdminClient();
+
+  const { data: target, error: lookupError } = await admin
+    .from("profiles")
+    .select("role")
+    .eq("user_id", userId)
+    .maybeSingle<{ role: string }>();
+  if (lookupError || !target) {
+    return { ok: false, error: "That user no longer exists." };
+  }
+  if (target.role === "super_admin" && me.role !== "super_admin") {
+    return {
+      ok: false,
+      error: "Only a super admin can reset a super admin's password.",
+    };
+  }
+
+  const { error: authError } = await admin.auth.admin.updateUserById(userId, {
+    password: parsed.data.password,
+  });
+  if (authError) {
+    return { ok: false, error: "Could not set the new password." };
+  }
+
+  await admin
+    .from("profiles")
+    .update({ must_change_password: true })
+    .eq("user_id", userId);
+
+  revalidatePath("/admin/users");
+  revalidatePath(`/admin/users/${userId}`);
   return { ok: true };
 }
 
