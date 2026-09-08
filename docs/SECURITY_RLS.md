@@ -64,6 +64,17 @@ Authorized admins/trainers may:
 
 Authorization must still be enforced by RLS/server logic.
 
+### User administration
+
+- `profiles` has no direct client `UPDATE` policy. Name / role / status changes
+  go only through `admin_update_user()` (`SECURITY DEFINER`), which re-checks
+  authorization.
+- Only a `super_admin` may grant or remove the `super_admin` role.
+- An admin cannot demote or deactivate their own account; the system keeps at
+  least one active `super_admin`.
+- New accounts are always created as `sales` — `handle_new_user()` ignores any
+  role supplied in auth user metadata.
+
 ## Answer-Key Protection
 
 Before result disclosure is permitted, sales responses must not include:

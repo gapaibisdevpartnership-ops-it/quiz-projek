@@ -143,6 +143,29 @@ Safe result summary only.
 5. check remaining ungraded essays;
 6. finalize attempt if all are graded.
 
+## Update User (role / status / name)
+
+`public.admin_update_user(target_user_id uuid, new_full_name text, new_role text, new_status text)`
+— `SECURITY DEFINER`, `EXECUTE` granted to `authenticated`. The **only** supported
+way to change a profile's role or status; there is no direct client `UPDATE`
+policy on `profiles` any more.
+
+### Validations (raised as `P0001`)
+
+- `UNAUTHORIZED` — caller is not an active admin/super_admin;
+- `INVALID_ROLE` / `INVALID_STATUS` / `INVALID_NAME`;
+- `USER_NOT_FOUND`;
+- `SUPER_ADMIN_REQUIRED` — only a super_admin may grant or remove `super_admin`
+  (i.e. when the new role or the target's current role is `super_admin`);
+- `CANNOT_DEMOTE_SELF` / `CANNOT_DEACTIVATE_SELF`;
+- `LAST_SUPER_ADMIN` — the change would leave zero active super_admins.
+
+### Behavior
+
+Updates `full_name`, `role`, `status` on the target profile in one statement.
+New accounts are always created as `sales` (`handle_new_user` ignores any role in
+auth metadata); `inviteUser` then applies the chosen role with the service role.
+
 ## Upload Quiz Asset
 
 ### Input

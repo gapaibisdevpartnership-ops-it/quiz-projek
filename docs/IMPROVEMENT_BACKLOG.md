@@ -19,7 +19,13 @@ SECURITY DEFINER RPCs, `submit`/`finalize` are `FOR UPDATE` + idempotent, and
 
 ---
 
-## P0 — Fix before launch (privilege-escalation)
+## P0 — Fix before launch (privilege-escalation) — ✅ DONE
+
+Resolved in `supabase/migrations/20260908160000_admin_user_rpc.sql` +
+`src/features/users/actions.ts` + `src/features/auth/service.ts`
+(`requireSuperAdmin`), covered by
+`tests/integration/admin-user-security.test.ts` (9 tests). See
+`docs/reports/P0_SECURITY_REPORT.md`. Details of the original findings below.
 
 ### 1. `profiles` UPDATE policy lets any admin rewrite any role, bypassing all app guards
 - **Where:** `supabase/migrations/20260907090000_foundation.sql:175-179` (`profiles: admin updates`);
