@@ -9,6 +9,21 @@
 - training-oriented;
 - low cognitive load.
 
+## Branding & theme
+
+- Product name: **GAPAI Mentorship**. Wordmark = a brand-yellow lightbulb +
+  "GAPAI" (bold) + "mentorship" (`src/components/brand-mark.tsx`).
+- Palette lives in `src/app/globals.css` as CSS variables (oklch):
+  - **primary** — brand violet (hue ~300). Buttons, links, focus ring.
+  - **brand** — the logo yellow (hue ~90). Accents only (the bulb; sidebar
+    active/ring in some places). Never a large fill or body text.
+  - neutrals carry a faint violet tint.
+  - the left **sidebar** is a solid brand-violet panel in light mode.
+- **Dark mode**: full `.dark` palette. `ThemeToggle`
+  (`src/components/theme-toggle.tsx`) cycles light → dark → system and persists
+  to `localStorage.theme`; an inline script in the root layout applies it before
+  first paint (no flash). System is the default.
+
 ## Priority by Role
 
 Sales:

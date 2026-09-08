@@ -3,65 +3,87 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * GAPAI Mentorship brand palette.
+ * Primary = brand violet (hue ~300), accent "brand" = the logo yellow (hue ~90).
+ * Neutrals carry a faint violet tint so the whole UI reads on-brand.
+ */
+
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+
+  --background: oklch(0.986 0.004 300);
+  --foreground: oklch(0.19 0.02 300);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.19 0.02 300);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.19 0.02 300);
+
+  --primary: oklch(0.52 0.23 300);
+  --primary-foreground: oklch(0.99 0.005 300);
+  --secondary: oklch(0.95 0.022 300);
+  --secondary-foreground: oklch(0.33 0.12 300);
+  --muted: oklch(0.96 0.012 300);
+  --muted-foreground: oklch(0.52 0.035 300);
+  --accent: oklch(0.94 0.03 300);
+  --accent-foreground: oklch(0.33 0.12 300);
+
+  --brand: oklch(0.83 0.16 90);
+  --brand-foreground: oklch(0.28 0.06 90);
+
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+
+  --border: oklch(0.9 0.014 300);
+  --input: oklch(0.9 0.014 300);
+  --ring: oklch(0.52 0.23 300);
+
+  /* Sidebar: brand violet panel in light mode for a strong identity. */
+  --sidebar: oklch(0.31 0.13 300);
+  --sidebar-foreground: oklch(0.95 0.02 300);
+  --sidebar-primary: oklch(0.83 0.16 90);
+  --sidebar-primary-foreground: oklch(0.28 0.06 90);
+  --sidebar-accent: oklch(0.4 0.15 300);
+  --sidebar-accent-foreground: oklch(0.99 0.005 300);
+  --sidebar-border: oklch(1 0 0 / 14%);
+  --sidebar-ring: oklch(0.83 0.16 90);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --background: oklch(0.16 0.018 300);
+  --foreground: oklch(0.95 0.012 300);
+  --card: oklch(0.205 0.024 300);
+  --card-foreground: oklch(0.95 0.012 300);
+  --popover: oklch(0.205 0.024 300);
+  --popover-foreground: oklch(0.95 0.012 300);
+
+  --primary: oklch(0.68 0.19 300);
+  --primary-foreground: oklch(0.16 0.02 300);
+  --secondary: oklch(0.27 0.03 300);
+  --secondary-foreground: oklch(0.95 0.012 300);
+  --muted: oklch(0.27 0.03 300);
+  --muted-foreground: oklch(0.72 0.03 300);
+  --accent: oklch(0.31 0.04 300);
+  --accent-foreground: oklch(0.97 0.01 300);
+
+  --brand: oklch(0.83 0.16 90);
+  --brand-foreground: oklch(0.2 0.05 90);
+
   --destructive: oklch(0.704 0.191 22.216);
   --destructive-foreground: oklch(0.985 0 0);
+
   --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.985 0 0);
-  --sidebar-primary-foreground: oklch(0.205 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --input: oklch(1 0 0 / 14%);
+  --ring: oklch(0.68 0.19 300);
+
+  --sidebar: oklch(0.14 0.02 300);
+  --sidebar-foreground: oklch(0.92 0.012 300);
+  --sidebar-primary: oklch(0.83 0.16 90);
+  --sidebar-primary-foreground: oklch(0.2 0.05 90);
+  --sidebar-accent: oklch(0.27 0.04 300);
+  --sidebar-accent-foreground: oklch(0.97 0.01 300);
+  --sidebar-border: oklch(1 0 0 / 8%);
+  --sidebar-ring: oklch(0.83 0.16 90);
 }
 
 @theme inline {
@@ -79,6 +101,8 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);

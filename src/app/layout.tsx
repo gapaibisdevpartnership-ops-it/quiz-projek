@@ -14,9 +14,19 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Sales Training Quiz Platform",
-  description: "Internal platform for sales training, assessment and analytics.",
+  title: "GAPAI Mentorship",
+  description: "Training, assessment and analytics for the GAPAI mentorship program.",
 };
+
+// Runs before first paint: applies the saved theme (or the OS preference) so the
+// page never flashes the wrong colours.
+const themeScript = `
+(function(){try{
+  var t = localStorage.getItem('theme');
+  var dark = t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.classList.toggle('dark', dark);
+}catch(e){}})();
+`;
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
@@ -26,6 +36,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <Providers>{children}</Providers>
       </body>
     </html>
