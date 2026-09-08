@@ -63,7 +63,14 @@ Resolved in `supabase/migrations/20260908160000_admin_user_rpc.sql` +
 
 ## P1 — High (operational + data-integrity)
 
-### 4. Auto-expire cron will silently not run on Vercel Hobby
+### 4. Auto-expire cron will silently not run on Vercel Hobby — ✅ DONE
+
+Confirmed: the Vercel deploy is rejected outright on Hobby with `*/5 * * * *`.
+Resolved in `supabase/migrations/20260908170000_attempt_expiry_pgcron.sql` —
+`pg_cron` runs `expire_stale_attempts()` every 5 min; `vercel.json` no longer
+declares a cron; the API route stays as a manual trigger.
+
+
 - **Where:** `vercel.json:6` (`*/5 * * * *`); `supabase/migrations/20260907150000_attempt_expiry.sql`
   (commented `pg_cron` block); `docs/RELEASE_CHECKLIST.md` "Attempt expiry".
 - **Problem:** Sub-daily Vercel Cron needs **Pro**. On Hobby the sweep never fires, so abandoned

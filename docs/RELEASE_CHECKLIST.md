@@ -45,9 +45,12 @@ npm run smoke https://<deployment-url>
 ## Attempt expiry
 
 - `expire_stale_attempts()` finalises abandoned `in_progress` attempts past
-  their deadline. It runs either from Vercel Cron (`/api/cron/expire-attempts`,
-  needs `CRON_SECRET`) or from an in-database `pg_cron` schedule — confirm
-  exactly one is active for the target environment.
+  their deadline. Production runs it from an in-database **`pg_cron`** schedule
+  (`expire-stale-attempts`, every 5 min — migration
+  `20260908170000_attempt_expiry_pgcron.sql`); the Vercel plan is Hobby, which
+  only allows daily crons, so `vercel.json` declares no cron. The
+  `GET /api/cron/expire-attempts` route stays as a manual / backup trigger
+  (needs `CRON_SECRET`). Keep exactly one automatic driver active.
 
 ## Release gate (all must hold)
 

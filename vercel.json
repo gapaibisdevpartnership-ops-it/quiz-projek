@@ -2,6 +2,5 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
   "regions": ["sin1"],
-  "github": { "silent": true },
-  "crons": [{ "path": "/api/cron/expire-attempts", "schedule": "*/5 * * * *" }]
+  "github": { "silent": true }
 }

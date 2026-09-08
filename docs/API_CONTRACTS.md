@@ -187,10 +187,11 @@ Asset location/reference.
 
 ## Expire Stale Attempts
 
-System job, not a user-facing endpoint. Runs as `service_role` via
-`public.expire_stale_attempts()` — driven by Vercel Cron
-(`GET /api/cron/expire-attempts`, `Authorization: Bearer $CRON_SECRET`) or an
-in-database `pg_cron` schedule.
+System job, not a user-facing endpoint. `public.expire_stale_attempts()` —
+scheduled in-database by `pg_cron` (`expire-stale-attempts`, every 5 min). The
+`GET /api/cron/expire-attempts` route (`Authorization: Bearer $CRON_SECRET`,
+service-role) remains as a manual / backup trigger. Vercel Cron is not used
+(Hobby plan = daily only).
 
 ### Behavior
 
