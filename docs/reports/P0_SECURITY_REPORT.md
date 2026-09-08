@@ -57,13 +57,17 @@ the linked project)
   super_admin cannot self-demote).
 - `npm run test:e2e` — auth + security specs pass (8).
 
-## Known unrelated failure
+## Test-data cleanup (follow-up)
 
-`tests/integration/rls.test.ts` — "a sales user sees no quizzes without an
-assignment" / "sees only their own assignments" now fail because the
-`sales.qa01` QA account has three leftover quiz assignments from earlier manual
-and UAT sessions ("quiz 1", "UAT 20260907 Quiz", "UAT 20260908-0550 Quiz").
-These tests assume a pristine zero-assignment account; they touch only
-`quizzes` / `quiz_assignments`, which this change does not modify. Fix by
-clearing those stray assignments or by having the tests seed their own state
-(backlog P3 #41).
+`tests/integration/rls.test.ts` "a sales user sees no quizzes without an
+assignment" had started failing because manual and Playwright-MCP UAT sessions
+left quizzes, questions, teams and quiz assignments behind (including a scratch
+quiz "mencoba 2" built entirely from `UAT `-prefixed questions, and assignments
+on the `sales.qa01` / `sales.qa02` QA accounts). None of this was touched by the
+P0 change.
+
+`scripts/cleanup-uat.mjs` (dry-run by default, `--apply` to delete) was added
+and run: it removes `UAT `-prefixed quizzes / questions / categories / teams,
+any quiz composed only of UAT questions, attempts on those quizzes, and every
+`quiz_assignment` for the QA sales users. After running it,
+`npm run test:integration` is **42/42 green** (5 files).
