@@ -26,6 +26,19 @@ export default defineConfig({
           fileParallelism: false,
         },
       },
+      {
+        extends: true,
+        test: {
+          name: "chaos",
+          environment: "node",
+          include: ["tests/chaos/**/*.test.ts"],
+          setupFiles: ["tests/setup/load-env.ts"],
+          // Concurrency scenarios need headroom; not part of the default gate.
+          testTimeout: 30_000,
+          hookTimeout: 30_000,
+          fileParallelism: false,
+        },
+      },
     ],
   },
 });

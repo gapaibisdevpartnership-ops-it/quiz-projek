@@ -94,6 +94,10 @@ declares a cron; the API route stays as a manual trigger.
 - **Fix (M):** `pg_advisory_xact_lock(hashtext(v_uid::text || target_quiz_id::text))` at the top of
   the function, **or** a partial unique index
   `on quiz_attempts(quiz_id,user_id) where status='in_progress'`.
+- **Confirmed live, 2026-09-11:** `tests/chaos/start-attempt-race.test.ts`
+  reproduces this on the linked project (2 of 3 runs) — see
+  `docs/reports/CHAOS_TESTING_REPORT.md`. Flip that test's assertion to a hard
+  requirement once this is fixed.
 
 ### 7. Deleting a user destroys or blocks attempt history inconsistently
 - **Where:** `quiz_attempts.user_id ... on delete cascade`
@@ -140,6 +144,9 @@ declares a cron; the API route stays as a manual trigger.
 - **11 (S):** `save_objective_answer` / `save_essay_answer` don't `FOR UPDATE` the attempt — a save
   can interleave with `submit` and mutate an answer post-submission. Add the row lock before the
   `status='in_progress'` check. `20260907120000_quiz_engine.sql:329-423`.
+  `tests/chaos/save-vs-submit-race.test.ts` targets this (didn't reproduce live
+  in ~5 runs — narrower race window than #6 above — see
+  `docs/reports/CHAOS_TESTING_REPORT.md`); flip its assertion once fixed.
 - **12 (S):** SECURITY DEFINER helpers not `revoke`d from `public`/`anon`
   (`set_updated_at`, `handle_new_user`, `current_role`, `is_admin`, `is_active`,
   `quiz_assigned_to_me`) — inconsistent with every Phase 5–8 RPC. Add revoke + explicit grant.
@@ -241,6 +248,15 @@ declares a cron; the API route stays as a manual trigger.
 - **47 (S):** Wire up `@vitest/coverage-v8` (installed, unused) — add a `test:coverage` script +
   thresholds.
 - **48 (S):** CI: add a `concurrency` group + least-privilege `permissions:` block; add Dependabot.
+- **49 (S):** `onToggleOption` calls `persistObjective(q, next)` (async + a
+  `setState`) **from inside** the `setAnswers` state-updater function — a side
+  effect inside a state updater. React Strict Mode (on by default in
+  `next dev`) double-invokes updaters to catch exactly this, which produces
+  duplicate autosave calls and a console warning ("Cannot update a component
+  while rendering a different component") in dev; found while building
+  `tests/e2e/chaos/*` (`docs/reports/CHAOS_TESTING_REPORT.md`). Fix: call
+  `persistObjective(q, next)` after `setAnswers(...)`, not inside its updater.
+  `src/features/attempts/quiz-player.tsx:116-131`.
 
 ---
 

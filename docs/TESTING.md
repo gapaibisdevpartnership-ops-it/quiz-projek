@@ -8,8 +8,11 @@ Test layers map to `docs/TESTING_QA.md`.
 | Integration (RLS, real Supabase) | Vitest | `tests/integration/**` | `npm run test:integration` |
 | Database (pgTAP) | Supabase CLI | `supabase/tests/*.sql` | `npm run test:rls` |
 | End-to-end | Playwright | `tests/e2e/**` | `npm run test:e2e` |
+| Chaos — server (RPC race/fault injection) | Vitest | `tests/chaos/**` | `npm run test:chaos` |
+| Chaos — client (network fault injection) | Playwright | `tests/e2e/chaos/**` | `npm run test:chaos:e2e` |
 
-`npm run test:all` runs unit + integration + e2e.
+`npm run test:all` runs unit + integration + e2e (chaos is **not** included —
+see below).
 `npm run typecheck` runs `tsc --noEmit`.
 
 ## Environment
@@ -43,6 +46,27 @@ curl -s -X POST "$NEXT_PUBLIC_SUPABASE_URL/auth/v1/admin/users" \
 
 The `handle_new_user` trigger creates the matching `profiles` row from
 `user_metadata` (`full_name`, `role`).
+
+## Chaos testing
+
+See `docs/CHAOS_TESTING_PLAN.md` for the full plan. Short version:
+
+- **Not part of `test:all` or the CI gate.** These tests fire concurrent /
+  failing / adversarial requests on purpose — some are designed to fail until
+  a known gap (`docs/IMPROVEMENT_BACKLOG.md` P1 #6, P2 #11) is fixed, and race
+  scenarios don't reproduce on every single run by nature. Run manually, or in
+  a separate non-blocking CI job.
+- `tests/chaos/*.test.ts` hits RPCs directly (concurrency, idempotency,
+  adversarial input) — same pattern as `tests/integration/`.
+- `tests/e2e/chaos/*.spec.ts` drives the real quiz player in a browser and
+  injects network failures via Playwright `page.route()` (delay / abort every
+  server-action call). `tests/e2e/chaos/fixture.ts` seeds a throwaway quiz per
+  test — don't share a quiz across chaos e2e tests, `start_quiz_attempt`
+  resumes an in-progress attempt for the same user+quiz, so an earlier test's
+  answers would leak into a later one.
+- Clean up leftover data (a crashed chaos run, or manual debugging) with
+  `node scripts/cleanup-uat.mjs --apply` — it sweeps both `"UAT "` and
+  `"CHAOS "` prefixes.
 
 ## CI
 

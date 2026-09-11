@@ -11,6 +11,8 @@
     "test": "vitest run --project unit",
     "test:watch": "vitest --project unit",
     "test:integration": "vitest run --project integration",
+    "test:chaos": "vitest run --project chaos",
+    "test:chaos:e2e": "playwright test tests/e2e/chaos",
     "test:rls": "supabase test db",
     "test:e2e": "playwright test",
     "test:all": "npm run test && npm run test:integration && npm run test:e2e",

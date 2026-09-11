@@ -1,4 +1,10 @@
 import { defineConfig, devices } from "@playwright/test";
+import { config } from "dotenv";
+
+// tests/e2e/chaos seeds/reads Supabase directly from the Playwright Node
+// process (same pattern as tests/setup/load-env.ts for the vitest suites).
+config({ path: ".env.test" });
+config({ path: ".env.local" });
 
 const PORT = 3000;
 const baseURL = `http://localhost:${PORT}`;
