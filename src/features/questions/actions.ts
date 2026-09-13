@@ -3,12 +3,17 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/features/auth/service";
+import { getQuestion } from "@/features/questions/service";
 import {
   categorySchema,
   questionSchema,
   type QuestionInput,
 } from "@/lib/validation/question";
 import type { CategoryInput } from "@/lib/validation/question";
+
+// question_text has a max length (src/lib/validation/question.ts) — keep the
+// "Copy of " clone always valid even if the source was near the limit.
+const MAX_QUESTION_TEXT = 4000;
 
 export type MutationResult =
   | { ok: true; id: string }
@@ -163,6 +168,79 @@ export async function updateQuestion(
   revalidatePath("/admin/questions");
   revalidatePath(`/admin/questions/${id}/edit`);
   return { ok: true, id };
+}
+
+/**
+ * Clone a question (and its options) as a brand-new, independent question.
+ * The clone always starts `status: 'active'` (the DB default — not set here)
+ * regardless of the source's status, and is owned by the acting admin.
+ * Reuses the same image URLs as the source (docs/DUPLICATE_QUESTION_PLAN.md
+ * — the storage bucket has no per-question path scoping, so no object copy
+ * is needed).
+ */
+export async function duplicateQuestion(
+  sourceId: string,
+): Promise<MutationResult> {
+  const profile = await requireAdmin();
+  const source = await getQuestion(sourceId);
+  if (!source) return { ok: false, error: "That question no longer exists." };
+
+  const questionText = source.questionText
+    ? `Copy of ${source.questionText}`.slice(0, MAX_QUESTION_TEXT)
+    : "";
+
+  const payload: QuestionInput =
+    source.questionType === "essay"
+      ? {
+          questionType: "essay",
+          categoryId: source.categoryId,
+          questionText,
+          questionImageUrl: source.questionImageUrl,
+          difficulty: source.difficulty,
+          explanation: source.explanation ?? "",
+          sampleAnswer: source.sampleAnswer ?? "",
+          gradingNotes: source.gradingNotes ?? "",
+        }
+      : {
+          questionType: source.questionType,
+          categoryId: source.categoryId,
+          questionText,
+          questionImageUrl: source.questionImageUrl,
+          difficulty: source.difficulty,
+          explanation: source.explanation ?? "",
+          options: source.options.map((o) => ({
+            answerText: o.answerText ?? "",
+            imageUrl: o.imageUrl,
+            isCorrect: o.isCorrect,
+          })),
+        };
+
+  const parsed = questionSchema.safeParse(payload);
+  if (!parsed.success) return { ok: false, error: firstError(parsed.error.issues) };
+
+  const supabase = await createClient();
+  const { data: q, error } = await supabase
+    .from("questions")
+    .insert(questionRowFromInput(parsed.data, profile.userId))
+    .select("id")
+    .single();
+  if (error) return { ok: false, error: error.message };
+
+  const rows = optionRows(q.id, parsed.data);
+  if (rows.length) {
+    const { error: oErr } = await supabase
+      .from("question_options")
+      .insert(rows);
+    if (oErr) {
+      // Roll back the orphaned question (same pattern as createQuestion —
+      // docs/IMPROVEMENT_BACKLOG.md item 17 tracks making this atomic).
+      await supabase.from("questions").delete().eq("id", q.id);
+      return { ok: false, error: oErr.message };
+    }
+  }
+
+  revalidatePath("/admin/questions");
+  return { ok: true, id: q.id };
 }
 
 export async function setQuestionStatus(

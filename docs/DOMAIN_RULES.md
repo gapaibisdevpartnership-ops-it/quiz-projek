@@ -18,6 +18,14 @@ These rules are non-negotiable unless the product owner explicitly changes them.
 4. Objective questions require valid correct-answer configuration.
 5. Essay questions do not use objective correct-answer scoring.
 6. Question and answer-option media are optional.
+7. A question can be **duplicated** into a brand-new, independent question
+   (`duplicateQuestion` — `docs/DUPLICATE_QUESTION_PLAN.md`): all fields and
+   options are copied, the clone's text is prefixed `"Copy of "`, it always
+   starts `status: active` and owned by the duplicating admin regardless of
+   the source's status/owner, and it reuses the source's image URLs (no
+   storage copy). The clone starts attached to no quiz. Duplicating a
+   question never mutates the source, and — like editing it — can never
+   affect any attempt, past or in progress (see "Historical Integrity").
 
 ## Single Choice
 

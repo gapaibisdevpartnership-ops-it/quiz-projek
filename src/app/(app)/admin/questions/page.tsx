@@ -2,6 +2,7 @@ import Link from "next/link";
 import { listCategories, listQuestions } from "@/features/questions/service";
 import { QUESTION_TYPE_LABELS } from "@/lib/validation/question";
 import { CategoryManager } from "@/features/questions/category-manager";
+import { QuestionRowActions } from "@/features/questions/question-row-actions";
 import { buttonVariants } from "@/components/ui/button";
 import {
   Card,
@@ -55,12 +56,7 @@ export default async function QuestionBankPage() {
                         {q.difficulty ? ` · ${q.difficulty}` : ""}
                       </p>
                     </div>
-                    <Link
-                      className="text-sm underline"
-                      href={`/admin/questions/${q.id}/edit`}
-                    >
-                      Edit
-                    </Link>
+                    <QuestionRowActions questionId={q.id} />
                   </li>
                 ))}
               </ul>

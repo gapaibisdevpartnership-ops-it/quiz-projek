@@ -201,6 +201,43 @@ change and voluntary changes. On success → `/dashboard`.
 
 Asset location/reference.
 
+## Duplicate Question (admin)
+
+`duplicateQuestion(sourceId)` server action
+(`src/features/questions/actions.ts`) — `requireAdmin()`. Not exposed as a
+Supabase RPC; runs entirely server-side under the caller's own session, same
+authorization boundary as `createQuestion`/`updateQuestion` (no dedicated
+contract previously existed for those either — this is the first documented
+question-bank action here).
+
+### Input
+
+- `sourceId` — id of an existing question.
+
+### Behavior
+
+1. Reads the source question + its options (admin-only RLS).
+2. Builds a new question: every field copied, `question_text` prefixed
+   `"Copy of "` and truncated to the schema's max length if needed, options
+   copied with new ids, image URLs reused verbatim (no storage copy).
+3. Validates the copy through the same `questionSchema` used by
+   create/update.
+4. Inserts the new `questions` row (`status` defaults to `active`,
+   `created_by` = the acting admin) then its `question_options`, rolling back
+   the question row if the options insert fails (same non-atomic pattern as
+   `createQuestion` — `docs/IMPROVEMENT_BACKLOG.md` item 17).
+
+### Output
+
+`{ ok: true, id }` (the new question's id) or `{ ok: false, error }`.
+
+### Must Not
+
+- Mutate the source question or its options.
+- Affect any `quiz_questions` row, or any past/in-progress attempt (attempts
+  read a frozen snapshot, never the live question — see
+  `docs/DOMAIN_RULES.md` "Historical Integrity").
+
 ## Expire Stale Attempts
 
 System job, not a user-facing endpoint. `public.expire_stale_attempts()` —
