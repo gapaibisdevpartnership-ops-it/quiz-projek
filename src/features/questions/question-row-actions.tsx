@@ -5,12 +5,19 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Copy, Loader2, Pencil } from "lucide-react";
 import { duplicateQuestion } from "@/features/questions/actions";
+import { Button, buttonVariants } from "@/components/ui/button";
 
 /**
  * Edit + Duplicate actions for one row in the Question Bank list
  * (docs/DUPLICATE_QUESTION_PLAN.md). A small client island so a failed
  * duplicate shows an error instead of silently doing nothing, and a
  * double-click can't fire the action twice.
+ *
+ * Built on the shared Button/buttonVariants (not hand-rolled Tailwind) so
+ * focus ring, disabled state, and hit-area match the rest of the app. This
+ * project's `Button` doesn't support `asChild` (no Radix Slot), so Edit — a
+ * `<Link>` that must look like a button — uses `buttonVariants()` as a
+ * className directly, same pattern as "+ New question" on this page.
  */
 export function QuestionRowActions({ questionId }: { questionId: string }) {
   const router = useRouter();
@@ -28,17 +35,18 @@ export function QuestionRowActions({ questionId }: { questionId: string }) {
 
   return (
     <div className="flex shrink-0 flex-col items-end gap-1">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1">
         <Link
-          className="inline-flex items-center gap-1 text-sm underline"
           href={`/admin/questions/${questionId}/edit`}
+          className={buttonVariants({ variant: "ghost", size: "sm" })}
         >
           <Pencil className="size-3.5" aria-hidden="true" />
           Edit
         </Link>
-        <button
+        <Button
           type="button"
-          className="inline-flex items-center gap-1 text-sm underline disabled:cursor-not-allowed disabled:no-underline disabled:opacity-50"
+          variant="ghost"
+          size="sm"
           disabled={pending}
           onClick={handleDuplicate}
         >
@@ -48,7 +56,7 @@ export function QuestionRowActions({ questionId }: { questionId: string }) {
             <Copy className="size-3.5" aria-hidden="true" />
           )}
           {pending ? "Duplicating…" : "Duplicate"}
-        </button>
+        </Button>
       </div>
       {error ? (
         <p className="text-destructive text-xs" role="alert">
