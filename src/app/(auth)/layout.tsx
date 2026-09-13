@@ -11,7 +11,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
       <div className="w-full max-w-sm">
         <div className="mb-6 flex flex-col items-center gap-1 text-center">
           <BrandMark className="text-lg" textClassName="text-primary" />
-          <p className="text-muted-foreground text-sm">Mentorship platform</p>
+          <p className="text-muted-foreground text-sm">Quiz Training Sales Platform</p>
         </div>
         {children}
       </div>
