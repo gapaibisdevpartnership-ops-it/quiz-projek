@@ -143,6 +143,7 @@ export function QuestionEditor({ categories, scopeId, question }: Props) {
   const [gradingNotes, setGradingNotes] = useState(
     question?.gradingNotes ?? "",
   );
+  const [keywords, setKeywords] = useState(question?.keywords ?? "");
   const [options, setOptions] = useState<OptionDraft[]>(() => {
     if (question && question.questionType !== "essay") {
       return question.options.map((o) => ({
@@ -187,7 +188,13 @@ export function QuestionEditor({ categories, scopeId, question }: Props) {
       explanation,
     };
     if (type === "essay") {
-      return { ...base, questionType: "essay", sampleAnswer, gradingNotes };
+      return {
+        ...base,
+        questionType: "essay",
+        sampleAnswer,
+        gradingNotes,
+        keywords,
+      };
     }
     return {
       ...base,
@@ -208,6 +215,7 @@ export function QuestionEditor({ categories, scopeId, question }: Props) {
     type,
     sampleAnswer,
     gradingNotes,
+    keywords,
     options,
   ]);
 
@@ -352,6 +360,21 @@ export function QuestionEditor({ categories, scopeId, question }: Props) {
                 value={gradingNotes}
                 onChange={(e) => setGradingNotes(e.target.value)}
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="keywords">
+                Keywords for grading hint (optional)
+              </Label>
+              <Input
+                id="keywords"
+                value={keywords}
+                onChange={(e) => setKeywords(e.target.value)}
+                placeholder="e.g. awareness, interest, decision"
+              />
+              <p className="text-muted-foreground text-xs">
+                Comma-separated. Used only as a suggestion when grading — you
+                always make the final call.
+              </p>
             </div>
           </CardContent>
         </Card>

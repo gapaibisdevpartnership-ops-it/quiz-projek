@@ -63,6 +63,7 @@ export interface BreakdownQuestion {
   explanation: string | null;
   sampleAnswer: string | null;
   gradingNotes: string | null;
+  keywords: string | null;
   options: {
     id: string;
     text: string | null;
@@ -173,6 +174,7 @@ export async function getAttemptDetail(
       explanation: q.explanation,
       sampleAnswer: q.sample_answer,
       gradingNotes: q.grading_notes,
+      keywords: q.keywords,
       options: qOpts
         .sort((x, y) => x.sort_order - y.sort_order)
         .map((o) => ({

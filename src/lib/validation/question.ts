@@ -107,6 +107,7 @@ export const essaySchema = z
     ...baseFields,
     sampleAnswer: z.string().trim().max(4000).optional().or(z.literal("")),
     gradingNotes: z.string().trim().max(2000).optional().or(z.literal("")),
+    keywords: z.string().trim().max(500).optional().or(z.literal("")),
   })
   .refine(hasPresentation, presentationRefine);
 

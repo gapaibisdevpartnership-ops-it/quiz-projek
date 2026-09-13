@@ -126,6 +126,7 @@ Before allowed result disclosure, sales must not receive:
 - `is_correct`;
 - `sample_answer`;
 - `grading_notes`;
+- `keywords`;
 - correct-answer payload.
 
 ## Submission

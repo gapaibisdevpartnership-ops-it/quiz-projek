@@ -52,7 +52,8 @@ kriteria, dan catat hasilnya.
 
 ### 3. Trainer — bangun konten
 3.1  Login Trainer. /admin/questions -> New: buat 1 soal single_choice (mis. "2+2=?" jawaban benar
-     "4"), 1 soal multiple_choice, 1 soal true_false, 1 soal essay (isi sample_answer + grading_notes).
+     "4"), 1 soal multiple_choice, 1 soal true_false, 1 soal essay (isi sample_answer + grading_notes
+     + keywords, mis. "awareness, interest, decision").
 3.2  (opsional) Upload gambar pada 1 soal dan 1 opsi jawaban -> tersimpan & preview tampil.
 3.3  /admin/quizzes/new -> buat quiz "UAT Quiz <ts>": passing_score 50, max_attempts 2,
      duration_minutes 10, show_result ON. Simpan -> status draft.
@@ -66,7 +67,7 @@ kriteria, dan catat hasilnya.
 4.2  Start -> masuk player. Cek: timer berjalan, semua soal tampil, opsi jawaban ada.
 4.3  Jawab soal pilihan (pilih jawaban benar untuk yang objektif), isi essay.
 4.4  Buka DevTools/network via MCP jika bisa, atau ambil snapshot payload: pastikan respons ke
-     sales TIDAK memuat "is_correct", "sample_answer", "grading_notes".
+     sales TIDAK memuat "is_correct", "sample_answer", "grading_notes", "keywords".
 4.5  Reload halaman player -> jawaban & sisa waktu tetap (resume attempt yang sama, bukan baru).
 4.6  Submit. Submit kedua kali -> no-op (tidak menggandakan/ mengubah).
 4.7  Karena ada essay -> status attempt = pending_review. Buka /quizzes/:id/result/:attemptId ->
@@ -79,8 +80,11 @@ kriteria, dan catat hasilnya.
 
 ### 6. Trainer — penilaian & hasil
 6.1  Login Trainer. /admin/grading -> attempt Sales 01 ada di antrian pending_review.
-6.2  Beri skor tiap essay (0..poin) + feedback. Setelah semua essay dinilai -> attempt otomatis
-     finalize: status jadi submitted, ada percentage & passed.
+6.2  Untuk essay dengan keywords: cek badge saran ("Likely Correct"/"Partial match"/"Likely
+     Incorrect") muncul dan jumlah match masuk akal; coba tombol "Mark Correct"/"Mark Wrong" pada
+     satu essay (skor terisi otomatis + tersimpan). Beri skor tiap essay (0..poin) + feedback.
+     Setelah semua essay dinilai -> attempt otomatis finalize: status jadi submitted, ada
+     percentage & passed.
 6.3  /admin/results -> attempt tampil dengan skor akhir; buka /admin/results/:id -> rincian benar.
 6.4  /admin/analytics -> KPI, tabel per-quiz, performa sales. Angka rekonsiliasi dengan /admin/results.
 6.5  Login Sales 01 lagi -> /quizzes/:id/result/:attemptId sekarang tampil skor + feedback trainer.

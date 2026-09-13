@@ -85,6 +85,8 @@ function questionRowFromInput(input: QuestionInput, createdBy?: string) {
       input.questionType === "essay" ? input.sampleAnswer || null : null,
     grading_notes:
       input.questionType === "essay" ? input.gradingNotes || null : null,
+    keywords:
+      input.questionType === "essay" ? input.keywords || null : null,
   };
   if (createdBy) row.created_by = createdBy;
   return row;
@@ -200,6 +202,7 @@ export async function duplicateQuestion(
           explanation: source.explanation ?? "",
           sampleAnswer: source.sampleAnswer ?? "",
           gradingNotes: source.gradingNotes ?? "",
+          keywords: source.keywords ?? "",
         }
       : {
           questionType: source.questionType,

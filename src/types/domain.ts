@@ -85,6 +85,7 @@ export interface Question {
   explanation: string | null;
   sampleAnswer: string | null;
   gradingNotes: string | null;
+  keywords: string | null;
   status: QuestionStatus;
   createdBy: string;
   createdAt: string;
@@ -113,6 +114,7 @@ export interface QuestionRow {
   explanation: string | null;
   sample_answer: string | null;
   grading_notes: string | null;
+  keywords: string | null;
   status: QuestionStatus;
   created_by: string;
   created_at: string;
@@ -160,6 +162,7 @@ export function mapQuestion(row: QuestionRow): Question {
     explanation: row.explanation,
     sampleAnswer: row.sample_answer,
     gradingNotes: row.grading_notes,
+    keywords: row.keywords,
     status: row.status,
     createdBy: row.created_by,
     createdAt: row.created_at,

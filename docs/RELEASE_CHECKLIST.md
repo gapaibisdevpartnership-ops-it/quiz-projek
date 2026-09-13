@@ -31,7 +31,7 @@ npm run smoke https://<deployment-url>
 8. Mixed quiz → `pending_review`; grading each essay finalises the attempt.
 9. Result page shows the right numbers (or only status when `show_result` is off).
 10. Network/DB inspection: a sales response never carries `is_correct`,
-    `sample_answer`, `grading_notes`.
+    `sample_answer`, `grading_notes`, `keywords`.
 11. `/admin/analytics` totals reconcile with `/admin/results`.
 12. `/leaderboard` ranks sales by average.
 

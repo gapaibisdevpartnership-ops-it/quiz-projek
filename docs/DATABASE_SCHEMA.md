@@ -137,6 +137,7 @@ explanation text
 
 sample_answer text
 grading_notes text
+keywords text -- comma-separated, advisory grading hint only (docs/ESSAY_KEYWORD_HINT_PLAN.md); answer-key-adjacent
 
 status text not null
 
@@ -265,9 +266,10 @@ sort_order integer not null
 explanation text
 sample_answer text
 grading_notes text
+keywords text
 ```
 
-Sensitive fields such as correct-answer metadata and grading notes must not be selectable by unauthorized sales queries.
+Sensitive fields such as correct-answer metadata and grading notes must not be selectable by unauthorized sales queries. `keywords` is answer-key-adjacent for the same reason and must not be selectable by sales either.
 
 ## attempt_question_options
 

@@ -48,6 +48,12 @@ These rules are non-negotiable unless the product owner explicitly changes them.
 - No objective correct answer required.
 - Must have positive maximum points.
 - May have sample answer and grading notes visible only to authorized graders.
+- May have an optional comma-separated `keywords` hint
+  (`docs/ESSAY_KEYWORD_HINT_PLAN.md`): shown to the grader as an advisory
+  "Likely Correct / Partial match / Likely Incorrect" badge with a match
+  count, plus "Mark Correct"/"Mark Wrong" shortcuts that pre-fill the score.
+  This never writes a score by itself — the grader's own submission through
+  `grade_essay_answer` is always the final and only authority.
 
 ## Assignments
 

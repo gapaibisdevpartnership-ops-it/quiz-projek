@@ -94,6 +94,7 @@ Before result disclosure is permitted, sales responses must not include:
 - `is_correct`;
 - `sample_answer`;
 - `grading_notes`;
+- `keywords`;
 - raw answer-key data.
 
 Do not fetch these and hide them in React.

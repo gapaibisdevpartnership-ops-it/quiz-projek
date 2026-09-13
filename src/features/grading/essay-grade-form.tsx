@@ -3,10 +3,23 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { gradeEssay } from "@/features/grading/actions";
+import { matchKeywords } from "@/features/grading/keyword-match";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert } from "@/components/ui/alert";
+
+const BADGE_STYLES: Record<string, string> = {
+  likely_correct: "bg-emerald-100 text-emerald-800",
+  partial: "bg-amber-100 text-amber-800",
+  likely_incorrect: "bg-rose-100 text-rose-800",
+};
+
+const BADGE_LABELS: Record<string, string> = {
+  likely_correct: "Likely Correct",
+  partial: "Partial match",
+  likely_incorrect: "Likely Incorrect",
+};
 
 export function EssayGradeForm({
   answerId,
@@ -14,12 +27,16 @@ export function EssayGradeForm({
   maxPoints,
   currentScore,
   currentFeedback,
+  keywords,
+  answerText,
 }: {
   answerId: string;
   attemptId: string;
   maxPoints: number;
   currentScore: number | null;
   currentFeedback: string | null;
+  keywords?: string | null;
+  answerText?: string | null;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -28,9 +45,11 @@ export function EssayGradeForm({
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(currentScore != null);
 
-  function submit() {
+  const suggestion = matchKeywords(keywords ?? null, answerText ?? null);
+
+  function submit(scoreOverride?: number) {
     setError(null);
-    const n = Number(score);
+    const n = scoreOverride ?? Number(score);
     if (!Number.isFinite(n) || n < 0 || n > maxPoints) {
       setError(`Score must be between 0 and ${maxPoints}.`);
       return;
@@ -43,10 +62,28 @@ export function EssayGradeForm({
     });
   }
 
+  function markCorrect() {
+    setScore(String(maxPoints));
+    submit(maxPoints);
+  }
+
+  function markWrong() {
+    setScore("0");
+    submit(0);
+  }
+
   return (
     <div className="space-y-2 rounded-md border bg-muted/30 p-3">
+      {suggestion ? (
+        <span
+          className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${BADGE_STYLES[suggestion.label]}`}
+        >
+          {BADGE_LABELS[suggestion.label]} ({suggestion.matched}/
+          {suggestion.total} keywords) — suggestion only
+        </span>
+      ) : null}
       {error ? <Alert variant="destructive">{error}</Alert> : null}
-      <div className="flex items-end gap-2">
+      <div className="flex flex-wrap items-end gap-2">
         <label className="text-xs">
           Score (0–{maxPoints})
           <Input
@@ -59,8 +96,26 @@ export function EssayGradeForm({
             onChange={(e) => setScore(e.target.value)}
           />
         </label>
-        <Button size="sm" disabled={pending} onClick={submit}>
+        <Button size="sm" disabled={pending} onClick={() => submit()}>
           {pending ? "Saving…" : saved ? "Update grade" : "Save grade"}
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          disabled={pending}
+          onClick={markCorrect}
+        >
+          Mark Correct
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          disabled={pending}
+          onClick={markWrong}
+        >
+          Mark Wrong
         </Button>
         {saved ? (
           <span className="text-xs text-emerald-600">Graded</span>

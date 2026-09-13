@@ -97,6 +97,8 @@ export default async function AttemptDetailPage({
                       maxPoints={q.points}
                       currentScore={q.essay.manualScore}
                       currentFeedback={q.essay.feedback}
+                      keywords={q.keywords}
+                      answerText={q.essay.text}
                     />
                   ) : (
                     <p className="text-muted-foreground text-xs">
