@@ -47,29 +47,46 @@
     `matchKeywords` treats that the same as no keywords set, badge simply
     doesn't render).
 
-## Not done yet (deliberately, pending user confirmation)
+## Update (2026-09-13) — migration applied to production
 
-- **Migration not applied to Supabase** (`supabase db push`). This was a
-  deliberate pause: the session flagged uncertainty over whether the
-  connected Supabase project is a QA/staging project or shares data with
-  production, and the user chose to hold off applying any schema change
-  until that's resolved, rather than risk it in the wrong environment.
-- Consequently, **full end-to-end verification is not done**: creating an
-  essay question with real keywords, submitting an answer as a sales user,
-  and confirming the badge/Mark Correct/Wrong buttons against a live
-  `keywords` column all require the migration to be applied first.
-- The RLS-negative check from the plan (sales client cannot read
-  `attempt_questions.keywords`; `get_attempt_for_player()` has no `keywords`
-  key) also needs the column to exist to be meaningfully tested — today it
-  trivially "passes" only because the column isn't there at all.
+The user confirmed the connected Supabase project (`fvymroovientdoixbhff`)
+is real production data. Applied the migration with a safety net:
+
+1. Manual backup via `pg_dump` (PostgreSQL 18 client tools) before touching
+   anything: `backup-pre-keywords-20260913-151212.sql` (665 KB, verified
+   non-empty and contains `CREATE TABLE public.questions`).
+2. `npx supabase migration list` re-checked immediately before pushing —
+   confirmed exactly one pending migration, no drift.
+3. `npx supabase db push` — succeeded (`{"upToDate":false, "dryRun":false,
+   "migrations":["20260913090000_essay_keywords.sql"], ...}`).
+4. Verified read-only, post-apply: `keywords` column present and readable
+   on both `questions` and `attempt_questions` (sampled rows show `null`,
+   as expected — no trainer has set one yet); `questions` row count
+   unchanged (15) and existing `question_text` values intact on the sample
+   checked.
+5. **Did not** exercise `start_quiz_attempt()` live end-to-end — neither QA
+   sales seed account currently has a quiz assignment, and the two
+   published quizzes on the project appear to be real (not QA) quizzes.
+   Creating a test assignment or attempt against production data for this
+   check was judged not worth the side effect; a successful `db push` (which
+   runs the migration as one script — a `create or replace function` syntax
+   error would have failed the whole push) was treated as sufficient
+   evidence the function replaced cleanly.
+6. Logged in `docs/reports/DEPLOY_LOG.md` as a migration-only entry (no app
+   deploy).
+
+Full end-to-end UI verification (create essay question with real keywords,
+submit as sales, grade as trainer, confirm badge + Mark Correct/Wrong, and
+the RLS-negative check that `keywords` never reaches a sales response) is
+now unblocked but still not done — see "Next steps".
 
 ## Next steps
 
-1. Confirm which Supabase project `.env.local` points at (dedicated
-   QA/staging vs. shared with real data) before running `supabase db push`.
-2. Once confirmed safe: `supabase db push`, then run the full manual
-   verification from the plan (create essay question with keywords,
-   duplicate it, submit as sales, grade as trainer, confirm badge + Mark
-   Correct/Wrong, confirm `keywords` never reaches a sales response).
-3. Push `feature/essay-keyword-hint` → Vercel Preview → click-test → merge
-   to `main` per the same flow used for `feature/duplicate-question`.
+1. Run the full manual verification from the plan against production data:
+   create an essay question with keywords, duplicate it, submit an answer
+   as a sales user, grade as trainer (confirm badge + Mark Correct/Wrong),
+   confirm `keywords` never reaches a sales response.
+2. Push `feature/essay-keyword-hint` → Vercel Preview → click-test → merge
+   to `main` per the same flow used for `feature/duplicate-question`. The
+   migration is already live, so this step only ships the UI/action code —
+   no further DB change needed.

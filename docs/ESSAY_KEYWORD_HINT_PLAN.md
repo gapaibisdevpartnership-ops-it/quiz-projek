@@ -1,9 +1,9 @@
 # Plan — Essay keyword hint + quick Correct/Wrong grading
 
-**Status:** ✅ Code complete on `feature/essay-keyword-hint`. Not merged, not
-pushed. **Migration not yet applied to Supabase** — paused pending
-confirmation of which project `.env.local` points at (see
-`docs/reports/ESSAY_KEYWORD_HINT_REPORT.md`). Kept below for the design
+**Status:** ✅ Code complete on `feature/essay-keyword-hint`, migration
+applied to production (2026-09-13, after a manual `pg_dump` backup — see
+`docs/reports/DEPLOY_LOG.md`). Branch not merged to `main`, not deployed via
+`vercel --prod` yet — that's a separate step. Kept below for the design
 reasoning.
 
 ## Why

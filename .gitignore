@@ -42,6 +42,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# local DB backups (pg_dump output) - contains real data, never commit
+backup-*.sql
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
