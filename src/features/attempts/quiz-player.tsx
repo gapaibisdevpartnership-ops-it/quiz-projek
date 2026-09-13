@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { flushSync } from "react-dom";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import type { PlayerData, PlayerQuestion } from "./types";
@@ -115,19 +116,24 @@ export function QuizPlayer({ data }: { data: PlayerData }) {
 
   function onToggleOption(q: PlayerQuestion, optionId: string) {
     if (finalized) return;
-    setAnswers((prev) => {
-      const cur = prev[q.id].selected;
-      let next: string[];
-      if (q.type === "multiple_choice") {
-        next = cur.includes(optionId)
-          ? cur.filter((x) => x !== optionId)
-          : [...cur, optionId];
-      } else {
-        next = [optionId];
-      }
-      void persistObjective(q, next);
-      return { ...prev, [q.id]: { ...prev[q.id], selected: next } };
+    let next: string[] = [];
+    // flushSync forces the updater below to run synchronously, so `next` is
+    // guaranteed set (from the freshest `prev`) before persistObjective is
+    // called immediately after — without it, setAnswers's updater can run
+    // asynchronously and `next` would still be `[]` when read below.
+    flushSync(() => {
+      setAnswers((prev) => {
+        const cur = prev[q.id].selected;
+        next =
+          q.type === "multiple_choice"
+            ? cur.includes(optionId)
+              ? cur.filter((x) => x !== optionId)
+              : [...cur, optionId]
+            : [optionId];
+        return { ...prev, [q.id]: { ...prev[q.id], selected: next } };
+      });
     });
+    void persistObjective(q, next);
   }
 
   function onEssayChange(q: PlayerQuestion, value: string) {
