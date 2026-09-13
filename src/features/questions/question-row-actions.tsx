@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Copy, Loader2, Pencil } from "lucide-react";
 import { duplicateQuestion } from "@/features/questions/actions";
 
 /**
@@ -29,17 +30,23 @@ export function QuestionRowActions({ questionId }: { questionId: string }) {
     <div className="flex shrink-0 flex-col items-end gap-1">
       <div className="flex items-center gap-3">
         <Link
-          className="text-sm underline"
+          className="inline-flex items-center gap-1 text-sm underline"
           href={`/admin/questions/${questionId}/edit`}
         >
+          <Pencil className="size-3.5" aria-hidden="true" />
           Edit
         </Link>
         <button
           type="button"
-          className="text-sm underline disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex items-center gap-1 text-sm underline disabled:cursor-not-allowed disabled:no-underline disabled:opacity-50"
           disabled={pending}
           onClick={handleDuplicate}
         >
+          {pending ? (
+            <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+          ) : (
+            <Copy className="size-3.5" aria-hidden="true" />
+          )}
           {pending ? "Duplicating…" : "Duplicate"}
         </button>
       </div>

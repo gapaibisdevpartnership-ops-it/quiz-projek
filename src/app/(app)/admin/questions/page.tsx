@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Plus } from "lucide-react";
 import { listCategories, listQuestions } from "@/features/questions/service";
 import { QUESTION_TYPE_LABELS } from "@/lib/validation/question";
 import { CategoryManager } from "@/features/questions/category-manager";
@@ -22,8 +23,12 @@ export default async function QuestionBankPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">Question Bank</h1>
-        <Link href="/admin/questions/new" className={buttonVariants()}>
-          + New question
+        <Link
+          href="/admin/questions/new"
+          className={buttonVariants({ className: "gap-1.5" })}
+        >
+          <Plus className="size-4" aria-hidden="true" />
+          New question
         </Link>
       </div>
 
