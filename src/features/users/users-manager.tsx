@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Plus } from "lucide-react";
 import { ROLES } from "@/lib/constants";
 import type { Profile } from "@/types/domain";
 import {
@@ -15,12 +16,20 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Alert } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export function UsersManager({ users }: { users: Profile[] }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [inviteOpen, setInviteOpen] = useState(false);
 
   const [inv, setInv] = useState({
     fullName: "",
@@ -77,73 +86,121 @@ export function UsersManager({ users }: { users: Profile[] }) {
 
   return (
     <div className="space-y-6">
-      {error ? <Alert variant="destructive">{error}</Alert> : null}
-      {notice ? <Alert variant="success">{notice}</Alert> : null}
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-semibold">Users</h1>
+        <Button
+          onClick={() => setInviteOpen(true)}
+          className="gap-1.5"
+        >
+          <Plus className="size-4" aria-hidden="true" /> Invite User
+        </Button>
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Invite a user</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-1">
-            <Label htmlFor="iname">Name</Label>
-            <Input
-              id="iname"
-              value={inv.fullName}
-              onChange={(e) => setInv({ ...inv, fullName: e.target.value })}
-            />
+      {error ? <Alert variant="destructive">{error}</Alert> : null}
+      {notice && !inviteOpen ? <Alert variant="success">{notice}</Alert> : null}
+
+      <Dialog
+        open={inviteOpen}
+        onOpenChange={(o) => {
+          setInviteOpen(o);
+          if (!o) {
+            setError(null);
+            setNotice(null);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Invite a user</DialogTitle>
+            <DialogDescription>
+              Create a new user account with a temporary password.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3 sm:grid-cols-2 py-4">
+            <div className="space-y-1">
+              <Label htmlFor="iname">Name</Label>
+              <Input
+                id="iname"
+                value={inv.fullName}
+                onChange={(e) => setInv({ ...inv, fullName: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="iemail">Email</Label>
+              <Input
+                id="iemail"
+                type="email"
+                value={inv.email}
+                onChange={(e) => setInv({ ...inv, email: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="irole">Role</Label>
+              <Select
+                id="irole"
+                value={inv.role}
+                onChange={(e) =>
+                  setInv({ ...inv, role: e.target.value as typeof inv.role })
+                }
+              >
+                {ROLES.map((r) => (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="ipw">Temporary password</Label>
+              <Input
+                id="ipw"
+                type="text"
+                autoComplete="off"
+                placeholder="min. 8 characters"
+                value={inv.password}
+                onChange={(e) => setInv({ ...inv, password: e.target.value })}
+              />
+            </div>
           </div>
-          <div className="space-y-1">
-            <Label htmlFor="iemail">Email</Label>
-            <Input
-              id="iemail"
-              type="email"
-              value={inv.email}
-              onChange={(e) => setInv({ ...inv, email: e.target.value })}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="irole">Role</Label>
-            <Select
-              id="irole"
-              value={inv.role}
-              onChange={(e) =>
-                setInv({ ...inv, role: e.target.value as typeof inv.role })
-              }
-            >
-              {ROLES.map((r) => (
-                <option key={r} value={r}>
-                  {r}
-                </option>
-              ))}
-            </Select>
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="ipw">Temporary password</Label>
-            <Input
-              id="ipw"
-              type="text"
-              autoComplete="off"
-              placeholder="min. 8 characters"
-              value={inv.password}
-              onChange={(e) => setInv({ ...inv, password: e.target.value })}
-            />
-          </div>
-          <div className="flex items-end sm:col-span-2">
-            <Button
-              onClick={invite}
-              disabled={
-                pending ||
-                !inv.email ||
-                !inv.fullName ||
-                inv.password.length < 8
-              }
-            >
-              Create user
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+          {error ? <Alert variant="destructive">{error}</Alert> : null}
+          {notice ? (
+            <div className="space-y-3">
+              <Alert variant="success">{notice}</Alert>
+              <Button
+                onClick={() => {
+                  setInviteOpen(false);
+                  setNotice(null);
+                }}
+                className="w-full"
+              >
+                Done
+              </Button>
+            </div>
+          ) : (
+            <div className="flex gap-2 justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setInviteOpen(false)}
+                disabled={pending}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={invite}
+                disabled={
+                  pending ||
+                  !inv.email ||
+                  !inv.fullName ||
+                  inv.password.length < 8
+                }
+              >
+                Create user
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Card>
         <CardHeader>
