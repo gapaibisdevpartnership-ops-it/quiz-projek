@@ -124,7 +124,7 @@ export function AppShell({
               type="submit"
               variant="outline"
               size="sm"
-              className="w-full group-data-[collapsible=icon]:px-0"
+              className="w-full text-foreground group-data-[collapsible=icon]:px-0"
             >
               <LogOut className="size-4 shrink-0" />
               <span className="group-data-[collapsible=icon]:hidden">
