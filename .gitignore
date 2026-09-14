@@ -45,6 +45,10 @@ yarn-error.log*
 # local DB backups (pg_dump output) - contains real data, never commit
 backup-*.sql
 
+# ad-hoc project status reports (not part of the docs/reports/ convention)
+docs/reports/PROJECT_STATUS_REPORT.md
+docs/reports/project-status-artifact.html
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
