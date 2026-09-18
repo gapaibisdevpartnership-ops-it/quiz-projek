@@ -1,6 +1,9 @@
 # Plan — Public "Session Link" entry flow (guest access via Supabase Anonymous Auth)
 
-**Status:** 📝 Planned, not yet implemented. Awaiting go-ahead to build.
+**Status:** ✅ Implemented and verified end-to-end in production
+(2026-09-18) on `feature/public-session-link`. Migration applied. See
+`docs/reports/PUBLIC_SESSION_LINK_REPORT.md` for what was tested and what
+was fixed along the way. Branch not yet merged to `main`.
 
 ## Context
 
