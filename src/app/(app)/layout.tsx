@@ -20,6 +20,12 @@ export default async function AppLayout({
   // Opsi A — a freshly provisioned / reset account must pick its own password
   // before using the app. /change-password lives outside this layout.
   if (profile.mustChangePassword) redirect("/change-password");
+  // A guest (Supabase Anonymous Auth, docs/PUBLIC_SESSION_LINK_PLAN.md) gets
+  // a real, active profile — requireProfile() alone would let them into the
+  // whole account-based app, including pages with no admin gate that still
+  // expose real-account data (e.g. /leaderboard shows real sales reps' names
+  // and scores). Guests belong only under /assessment/*, never here.
+  if (profile.isGuest) redirect("/assessment");
 
   const cookieStore = await cookies();
   const defaultOpen = cookieStore.get("sidebar_state")?.value !== "false";
