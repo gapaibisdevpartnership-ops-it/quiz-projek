@@ -1,7 +1,42 @@
 # Plan — Session link capacity/attempt/scheduling settings (name-only candidates)
 
-**Status:** 📝 Implementing on `feature/session-link-capacity` (branched
-from `feature/public-session-link`).
+**Status:** ✅ Implemented, migration applied to production, verified
+end-to-end with dummy data (cleaned up after) on
+`feature/session-link-capacity`. Not yet merged to `main`.
+
+## Verification results (2026-09-20)
+
+Applied `20260920090000_session_link_capacity.sql` to production (manual
+`pg_dump` backup first). One hiccup: `supabase db push` initially refused
+with `LegacyDbPushMissingLocalError` — the production database already had
+`20260919090000_session_managers.sql` applied (from testing the now-
+dormant `feature/session-managers` branch), but that file doesn't exist on
+this branch's lineage. Fixed with
+`supabase migration repair --status reverted 20260919090000` (metadata-only
+— corrects the CLI's tracking table, does not touch or revert any actual
+schema) after explicit approval, then the push succeeded cleanly. Note for
+later: production now has a small amount of "orphaned" schema
+(`profiles.can_manage_sessions`, `admin_set_can_manage_sessions()`, one
+extra RLS policy) from that abandoned feature — harmless (default
+`false`/unused by any current code), but worth a cleanup migration
+eventually if `feature/session-managers` is formally dropped.
+
+All 4 planned scenarios verified live via Playwright against dummy data,
+cleaned up after each:
+1. **`max_candidates = 1`**: 1st candidate starts and can resume
+   (same attempt id both times); a 2nd, distinct candidate is rejected
+   with "This link has reached its limit of candidates."
+2. **`max_attempts_override = 1`** on a quiz whose own `max_attempts = 5`:
+   candidate's 2nd attempt via the link is blocked at 1, confirming the
+   override — not the quiz's own limit — wins.
+3. **`starts_at` in the future**: entry page shows "This link isn't open
+   yet" before the time, and accepts normally (form works, attempt starts)
+   once `starts_at` is in the past.
+4. **Regression**: an ordinary link with all 3 new fields left blank
+   behaves exactly as before — no badges, normal submit, 1/1 100% Passed,
+   zero console errors.
+
+`npm run lint/typecheck/test/build` all green throughout.
 
 ## Context
 
