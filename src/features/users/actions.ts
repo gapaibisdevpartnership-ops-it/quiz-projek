@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { requireAdmin } from "@/features/auth/service";
+import { requireAdmin, requireSuperAdmin } from "@/features/auth/service";
 import {
   adminResetPasswordSchema,
   inviteUserSchema,
@@ -161,5 +161,58 @@ export async function updateUser(
 
   revalidatePath("/admin/users");
   revalidatePath(`/admin/users/${userId}`);
+  return { ok: true };
+}
+
+/**
+ * Permanently delete a user (docs/HARD_DELETE_USER_PLAN.md) — super_admin
+ * only, deliberately not exposed to admin/trainer at all. Content the user
+ * authored/assigned/graded/generated survives (attribution set to null,
+ * supabase/migrations/20260921090000_hard_delete_user_prep.sql); only the
+ * target's own account and their own attempt history are gone, which is
+ * the intended meaning of "permanent" here.
+ */
+export async function deleteUserPermanently(
+  userId: string,
+): Promise<UserMutationResult> {
+  const me = await requireSuperAdmin();
+
+  if (userId === me.userId) {
+    return { ok: false, error: "You cannot delete your own account." };
+  }
+
+  const supabase = await createClient();
+  const { data: target, error: lookupError } = await supabase
+    .from("profiles")
+    .select("role, status")
+    .eq("user_id", userId)
+    .maybeSingle<{ role: string; status: string }>();
+  if (lookupError || !target) {
+    return { ok: false, error: "That user no longer exists." };
+  }
+
+  if (target.role === "super_admin" && target.status === "active") {
+    const { count } = await supabase
+      .from("profiles")
+      .select("user_id", { count: "exact", head: true })
+      .eq("role", "super_admin")
+      .eq("status", "active")
+      .neq("user_id", userId);
+    if (!count) {
+      return {
+        ok: false,
+        error:
+          "There must be at least one active super admin. Promote another first.",
+      };
+    }
+  }
+
+  const admin = createAdminClient();
+  const { error: deleteError } = await admin.auth.admin.deleteUser(userId);
+  if (deleteError) {
+    return { ok: false, error: "Could not delete the account." };
+  }
+
+  revalidatePath("/admin/users");
   return { ok: true };
 }

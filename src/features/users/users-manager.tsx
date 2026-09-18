@@ -6,6 +6,7 @@ import { Plus } from "lucide-react";
 import { ROLES } from "@/lib/constants";
 import type { Profile } from "@/types/domain";
 import {
+  deleteUserPermanently,
   inviteUser,
   resetUserPassword,
   updateUser,
@@ -24,7 +25,15 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-export function UsersManager({ users }: { users: Profile[] }) {
+export function UsersManager({
+  users,
+  viewerId,
+  viewerIsSuperAdmin,
+}: {
+  users: Profile[];
+  viewerId: string;
+  viewerIsSuperAdmin: boolean;
+}) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -40,6 +49,8 @@ export function UsersManager({ users }: { users: Profile[] }) {
 
   const [resettingId, setResettingId] = useState<string | null>(null);
   const [newPassword, setNewPassword] = useState("");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmEmail, setConfirmEmail] = useState("");
 
   function invite() {
     setError(null);
@@ -80,6 +91,19 @@ export function UsersManager({ users }: { users: Profile[] }) {
       setNotice(
         `Password reset for ${u.email}. Give them the new one — they must change it on next sign-in.`,
       );
+      router.refresh();
+    });
+  }
+
+  function deleteForever(u: Profile) {
+    setError(null);
+    setNotice(null);
+    start(async () => {
+      const res = await deleteUserPermanently(u.userId);
+      if (!res.ok) return setError(res.error);
+      setDeletingId(null);
+      setConfirmEmail("");
+      setNotice(`${u.email} was permanently deleted.`);
       router.refresh();
     });
   }
@@ -259,7 +283,68 @@ export function UsersManager({ users }: { users: Profile[] }) {
                   >
                     Reset password
                   </Button>
+                  {viewerIsSuperAdmin && u.userId !== viewerId ? (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-destructive hover:text-destructive"
+                      disabled={pending}
+                      onClick={() => {
+                        setDeletingId(
+                          deletingId === u.userId ? null : u.userId,
+                        );
+                        setConfirmEmail("");
+                      }}
+                    >
+                      Delete permanently
+                    </Button>
+                  ) : null}
                 </div>
+
+                {deletingId === u.userId ? (
+                  <div className="space-y-2 rounded-md border border-destructive/30 bg-destructive/5 p-3">
+                    <p className="text-sm">
+                      This permanently deletes <strong>{u.email}</strong> —
+                      it cannot be undone. Their own quiz attempts are
+                      deleted too. Content they created, assigned, or
+                      graded (questions, quizzes, assignments, session
+                      links) is kept, just no longer attributed to them.
+                    </p>
+                    <div className="flex flex-wrap items-end gap-2">
+                      <div className="space-y-1">
+                        <Label htmlFor={`del-${u.userId}`}>
+                          Type <span className="font-mono">{u.email}</span>{" "}
+                          to confirm
+                        </Label>
+                        <Input
+                          id={`del-${u.userId}`}
+                          className="h-8 w-64"
+                          value={confirmEmail}
+                          onChange={(e) => setConfirmEmail(e.target.value)}
+                        />
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        disabled={pending || confirmEmail !== u.email}
+                        onClick={() => deleteForever(u)}
+                      >
+                        Delete permanently
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        disabled={pending}
+                        onClick={() => {
+                          setDeletingId(null);
+                          setConfirmEmail("");
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : null}
 
                 {resettingId === u.userId ? (
                   <div className="flex flex-wrap items-end gap-2">

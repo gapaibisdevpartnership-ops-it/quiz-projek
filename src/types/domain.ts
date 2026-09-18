@@ -90,7 +90,7 @@ export interface Question {
   gradingNotes: string | null;
   keywords: string | null;
   status: QuestionStatus;
-  createdBy: string;
+  createdBy: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -119,7 +119,7 @@ export interface QuestionRow {
   grading_notes: string | null;
   keywords: string | null;
   status: QuestionStatus;
-  created_by: string;
+  created_by: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -192,7 +192,7 @@ export interface Quiz {
   showCorrectAnswer: boolean;
   startAt: string | null;
   endAt: string | null;
-  createdBy: string;
+  createdBy: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -227,7 +227,7 @@ export interface QuizRow {
   show_correct_answer: boolean;
   start_at: string | null;
   end_at: string | null;
-  created_by: string;
+  created_by: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -328,7 +328,7 @@ export interface Assignment {
   quizId: string;
   userId: string | null;
   teamId: string | null;
-  assignedBy: string;
+  assignedBy: string | null;
   assignedAt: string;
   dueAt: string | null;
 }
@@ -338,7 +338,7 @@ export interface AssignmentRow {
   quiz_id: string;
   user_id: string | null;
   team_id: string | null;
-  assigned_by: string;
+  assigned_by: string | null;
   assigned_at: string;
   due_at: string | null;
 }
