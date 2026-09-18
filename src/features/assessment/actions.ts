@@ -9,7 +9,10 @@ export type StartGuestResult =
 
 const GUEST_ERROR_COPY: Record<string, string> = {
   SESSION_NOT_FOUND: "This link isn't valid. Ask the trainer for a new one.",
+  SESSION_NOT_STARTED: "This link isn't open yet. Check back later.",
   SESSION_EXPIRED: "This link has expired. Ask the trainer for a new one.",
+  SESSION_FULL:
+    "This link has reached its limit of candidates. Ask the trainer for a new one.",
   NOT_ON_ROSTER:
     "That name isn't on the list for this link. Check the spelling, or ask the trainer.",
   GUEST_ONLY: "Something went wrong starting your session. Please reopen the link.",

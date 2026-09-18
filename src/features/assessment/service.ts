@@ -16,6 +16,7 @@ export type ValidateResult =
 
 const ERROR_COPY: Record<string, string> = {
   SESSION_NOT_FOUND: "This link isn't valid. Ask the trainer for a new one.",
+  SESSION_NOT_STARTED: "This link isn't open yet. Check back later.",
   SESSION_EXPIRED: "This link has expired. Ask the trainer for a new one.",
   QUIZ_NOT_AVAILABLE: "This assessment isn't open right now.",
 };

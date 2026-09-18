@@ -24,12 +24,18 @@ export async function createSession(
   const expiresAt = parsed.data.expiresInDays
     ? new Date(Date.now() + parsed.data.expiresInDays * 86_400_000).toISOString()
     : null;
+  const startsAt = parsed.data.opensInDays
+    ? new Date(Date.now() + parsed.data.opensInDays * 86_400_000).toISOString()
+    : null;
 
   const supabase = await createClient();
   const { error } = await supabase.from("assessment_sessions").insert({
     quiz_id: parsed.data.quizId,
     label: parsed.data.label || null,
     expires_at: expiresAt,
+    starts_at: startsAt,
+    max_candidates: parsed.data.maxCandidates,
+    max_attempts_override: parsed.data.maxAttemptsOverride,
     candidate_roster: parseRoster(parsed.data.rosterText),
     created_by: me.userId,
   });

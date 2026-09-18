@@ -20,6 +20,13 @@ const EXPIRY_OPTIONS = [
   { value: "30", label: "30 days" },
 ];
 
+const OPENS_OPTIONS = [
+  { value: "", label: "Now" },
+  { value: "1", label: "In 1 day" },
+  { value: "3", label: "In 3 days" },
+  { value: "7", label: "In 7 days" },
+];
+
 export function SessionLinks({
   quizId,
   sessions,
@@ -34,7 +41,10 @@ export function SessionLinks({
 
   const [label, setLabel] = useState("");
   const [expiryDays, setExpiryDays] = useState("");
+  const [opensDays, setOpensDays] = useState("");
   const [rosterText, setRosterText] = useState("");
+  const [maxCandidates, setMaxCandidates] = useState("");
+  const [maxAttemptsOverride, setMaxAttemptsOverride] = useState("");
 
   function create() {
     setError(null);
@@ -45,12 +55,20 @@ export function SessionLinks({
         expiresInDays: expiryDays
           ? (Number(expiryDays) as 1 | 3 | 7 | 30)
           : null,
+        opensInDays: opensDays ? (Number(opensDays) as 1 | 3 | 7 | 30) : null,
         rosterText,
+        maxCandidates: maxCandidates ? Number(maxCandidates) : null,
+        maxAttemptsOverride: maxAttemptsOverride
+          ? Number(maxAttemptsOverride)
+          : null,
       });
       if (!res.ok) return setError(res.error);
       setLabel("");
       setExpiryDays("");
+      setOpensDays("");
       setRosterText("");
+      setMaxCandidates("");
+      setMaxAttemptsOverride("");
       router.refresh();
     });
   }
@@ -89,6 +107,20 @@ export function SessionLinks({
           />
         </div>
         <div className="space-y-1">
+          <Label htmlFor="sopens">Opens</Label>
+          <Select
+            id="sopens"
+            value={opensDays}
+            onChange={(e) => setOpensDays(e.target.value)}
+          >
+            {OPENS_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </Select>
+        </div>
+        <div className="space-y-1">
           <Label htmlFor="sexpiry">Expires</Label>
           <Select
             id="sexpiry"
@@ -101,6 +133,30 @@ export function SessionLinks({
               </option>
             ))}
           </Select>
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="smaxcand">Max candidates (optional)</Label>
+          <Input
+            id="smaxcand"
+            type="number"
+            min={1}
+            placeholder="Unlimited"
+            value={maxCandidates}
+            onChange={(e) => setMaxCandidates(e.target.value)}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="smaxattempts">
+            Max attempts per candidate (optional)
+          </Label>
+          <Input
+            id="smaxattempts"
+            type="number"
+            min={1}
+            placeholder="Use quiz default"
+            value={maxAttemptsOverride}
+            onChange={(e) => setMaxAttemptsOverride(e.target.value)}
+          />
         </div>
         <div className="space-y-1 sm:col-span-2">
           <Label htmlFor="sroster">
@@ -151,10 +207,30 @@ export function SessionLinks({
                     Open to anyone with the link
                   </span>
                 )}
+                {s.startsAt && new Date(s.startsAt) > new Date() ? (
+                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                    not open yet
+                  </span>
+                ) : null}
+                {s.maxCandidates != null &&
+                s.candidatesUsed >= s.maxCandidates ? (
+                  <span className="rounded-full bg-rose-100 px-2 py-0.5 text-xs font-medium text-rose-800">
+                    full
+                  </span>
+                ) : null}
               </div>
               <p className="text-muted-foreground text-xs">
                 Created {formatDateTimeUTC(s.createdAt)}
+                {s.startsAt ? ` · opens ${formatDateTimeUTC(s.startsAt)}` : ""}
                 {s.expiresAt ? ` · expires ${formatDateTimeUTC(s.expiresAt)}` : ""}
+              </p>
+              <p className="text-muted-foreground text-xs">
+                {s.candidatesUsed}
+                {s.maxCandidates != null ? ` of ${s.maxCandidates}` : ""}{" "}
+                candidate{s.candidatesUsed === 1 && s.maxCandidates == null ? "" : "s"}
+                {s.maxAttemptsOverride != null
+                  ? ` · ${s.maxAttemptsOverride} attempt${s.maxAttemptsOverride === 1 ? "" : "s"} per candidate`
+                  : ""}
               </p>
               <div className="flex gap-2">
                 <Button size="sm" variant="outline" onClick={() => copyLink(s)}>
