@@ -21,17 +21,7 @@ export async function listSessionsForQuiz(
     .select("*")
     .eq("quiz_id", quizId)
     .order("created_at", { ascending: false });
-  if (error) {
-    // TODO: remove this guard once
-    // supabase/migrations/20260918090000_public_session_link.sql is applied
-    // to production (docs/PUBLIC_SESSION_LINK_PLAN.md) — until then the
-    // table doesn't exist yet (PostgREST reports this as "PGRST205", not
-    // Postgres's raw "42P01", since it's PostgREST's schema-cache lookup
-    // that fails, not the query itself), and the quiz overview page that
-    // renders the Session Links card must not break for admins over it.
-    if (error.code === "42P01" || error.code === "PGRST205") return [];
-    throw error;
-  }
+  if (error) throw error;
   return (data ?? []).map((r) => ({
     id: r.id,
     quizId: r.quiz_id,

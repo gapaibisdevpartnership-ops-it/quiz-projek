@@ -16,7 +16,14 @@
 create table public.assessment_sessions (
   id                uuid primary key default gen_random_uuid(),
   quiz_id           uuid not null references public.quizzes (id) on delete cascade,
-  token             text not null unique default encode(gen_random_bytes(24), 'base64url'),
+  -- Two concatenated UUIDs (no hyphens) — unguessable, and avoids a new
+  -- extension dependency (gen_random_bytes needs pgcrypto, which isn't
+  -- enabled on this project; gen_random_uuid() is already used everywhere
+  -- else in this schema and needs nothing extra).
+  token             text not null unique default (
+                        replace(gen_random_uuid()::text, '-', '') ||
+                        replace(gen_random_uuid()::text, '-', '')
+                      ),
   label             text,
   candidate_roster  text[],  -- null = open to anyone with the link
   expires_at        timestamptz,

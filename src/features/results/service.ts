@@ -32,18 +32,17 @@ export async function listAllAttempts(): Promise<AttemptListRow[]> {
   const userIds = [...new Set(rows.map((r) => r.user_id as string))];
   const [{ data: quizzes }, { data: profiles }] = await Promise.all([
     supabase.from("quizzes").select("id, title").in("id", quizIds),
-    // TODO: select `is_guest` too once
-    // supabase/migrations/20260918090000_public_session_link.sql is applied
-    // to production (docs/PUBLIC_SESSION_LINK_PLAN.md) — the column doesn't
-    // exist yet.
     supabase
       .from("profiles")
-      .select("user_id, full_name, email")
+      .select("user_id, full_name, email, is_guest")
       .in("user_id", userIds),
   ]);
   const title = new Map((quizzes ?? []).map((q) => [q.id, q.title]));
   const name = new Map(
     (profiles ?? []).map((p) => [p.user_id, p.full_name || p.email]),
+  );
+  const guest = new Map(
+    (profiles ?? []).map((p) => [p.user_id, p.is_guest as boolean]),
   );
 
   return rows.map((r) => ({
@@ -51,7 +50,7 @@ export async function listAllAttempts(): Promise<AttemptListRow[]> {
     quizId: r.quiz_id as string,
     quizTitle: title.get(r.quiz_id as string) ?? "Quiz",
     userName: name.get(r.user_id as string) ?? "User",
-    isGuest: false,
+    isGuest: guest.get(r.user_id as string) ?? false,
     attemptNumber: r.attempt_number as number,
     status: r.status as string,
     percentage: (r.percentage as number | null) ?? null,
@@ -119,12 +118,9 @@ export async function getAttemptDetail(
 
   const [{ data: quiz }, { data: profile }, { data: aqs }] = await Promise.all([
     supabase.from("quizzes").select("title").eq("id", a.quiz_id).maybeSingle(),
-    // TODO: select `is_guest` too once
-    // supabase/migrations/20260918090000_public_session_link.sql is applied
-    // to production (docs/PUBLIC_SESSION_LINK_PLAN.md).
     supabase
       .from("profiles")
-      .select("full_name, email")
+      .select("full_name, email, is_guest")
       .eq("user_id", a.user_id)
       .maybeSingle(),
     supabase
@@ -211,7 +207,7 @@ export async function getAttemptDetail(
     quizTitle: (quiz?.title as string) ?? "Quiz",
     userName:
       (profile?.full_name as string) || (profile?.email as string) || "User",
-    isGuest: false,
+    isGuest: (profile?.is_guest as boolean) ?? false,
     attemptNumber: a.attempt_number,
     status: a.status,
     autoScore: a.auto_score,
