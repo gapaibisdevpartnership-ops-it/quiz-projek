@@ -128,11 +128,13 @@ export interface SalesPerformanceRow {
 export async function getSalesPerformance(): Promise<SalesPerformanceRow[]> {
   const supabase = await createClient();
   const [{ data: profiles }, { data: attempts }] = await Promise.all([
+    // TODO: re-add `.eq("is_guest", false)` once
+    // supabase/migrations/20260918090000_public_session_link.sql is applied
+    // to production (docs/PUBLIC_SESSION_LINK_PLAN.md).
     supabase
       .from("profiles")
       .select("user_id, full_name, email")
-      .eq("role", "sales")
-      .eq("is_guest", false),
+      .eq("role", "sales"),
     supabase
       .from("quiz_attempts")
       .select("user_id, status, percentage, passed")
