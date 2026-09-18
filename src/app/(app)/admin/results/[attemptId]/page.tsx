@@ -21,7 +21,9 @@ export default async function AttemptDetailPage({
         <div>
           <h1 className="text-xl font-semibold">{d.quizTitle}</h1>
           <p className="text-muted-foreground text-sm">
-            {d.userName} · attempt #{d.attemptNumber} · {d.status.replace("_", " ")}
+            {d.userName}
+            {d.isGuest ? " (via session link)" : ""} · attempt #
+            {d.attemptNumber} · {d.status.replace("_", " ")}
           </p>
         </div>
         <Link className="text-sm underline" href="/admin/results">

@@ -39,7 +39,14 @@ export default async function ResultsPage() {
                         {a.quizTitle}
                       </Link>
                     </td>
-                    <td>{a.userName}</td>
+                    <td>
+                      {a.userName}
+                      {a.isGuest ? (
+                        <span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                          via session link
+                        </span>
+                      ) : null}
+                    </td>
                     <td>{a.attemptNumber}</td>
                     <td>{a.status.replace("_", " ")}</td>
                     <td>

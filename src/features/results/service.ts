@@ -7,6 +7,7 @@ export interface AttemptListRow {
   quizId: string;
   quizTitle: string;
   userName: string;
+  isGuest: boolean;
   attemptNumber: number;
   status: string;
   percentage: number | null;
@@ -33,12 +34,15 @@ export async function listAllAttempts(): Promise<AttemptListRow[]> {
     supabase.from("quizzes").select("id, title").in("id", quizIds),
     supabase
       .from("profiles")
-      .select("user_id, full_name, email")
+      .select("user_id, full_name, email, is_guest")
       .in("user_id", userIds),
   ]);
   const title = new Map((quizzes ?? []).map((q) => [q.id, q.title]));
   const name = new Map(
     (profiles ?? []).map((p) => [p.user_id, p.full_name || p.email]),
+  );
+  const guest = new Map(
+    (profiles ?? []).map((p) => [p.user_id, p.is_guest as boolean]),
   );
 
   return rows.map((r) => ({
@@ -46,6 +50,7 @@ export async function listAllAttempts(): Promise<AttemptListRow[]> {
     quizId: r.quiz_id as string,
     quizTitle: title.get(r.quiz_id as string) ?? "Quiz",
     userName: name.get(r.user_id as string) ?? "User",
+    isGuest: guest.get(r.user_id as string) ?? false,
     attemptNumber: r.attempt_number as number,
     status: r.status as string,
     percentage: (r.percentage as number | null) ?? null,
@@ -84,6 +89,7 @@ export interface AttemptDetail {
   quizId: string;
   quizTitle: string;
   userName: string;
+  isGuest: boolean;
   attemptNumber: number;
   status: string;
   autoScore: number | null;
@@ -114,7 +120,7 @@ export async function getAttemptDetail(
     supabase.from("quizzes").select("title").eq("id", a.quiz_id).maybeSingle(),
     supabase
       .from("profiles")
-      .select("full_name, email")
+      .select("full_name, email, is_guest")
       .eq("user_id", a.user_id)
       .maybeSingle(),
     supabase
@@ -201,6 +207,7 @@ export async function getAttemptDetail(
     quizTitle: (quiz?.title as string) ?? "Quiz",
     userName:
       (profile?.full_name as string) || (profile?.email as string) || "User",
+    isGuest: (profile?.is_guest as boolean) ?? false,
     attemptNumber: a.attempt_number,
     status: a.status,
     autoScore: a.auto_score,

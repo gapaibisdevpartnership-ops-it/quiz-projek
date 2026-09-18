@@ -8,8 +8,10 @@ import {
 import { listQuizAssignments } from "@/features/assignments/service";
 import { listUsers } from "@/features/users/service";
 import { listTeams } from "@/features/teams/service";
+import { listSessionsForQuiz } from "@/features/sessions/service";
 import { QuizStatusActions } from "@/features/quizzes/quiz-status-actions";
 import { QuizAssignments } from "@/features/assignments/quiz-assignments";
+import { SessionLinks } from "@/features/sessions/session-links";
 import { formatDateTimeUTC } from "@/lib/format";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,11 +24,12 @@ export default async function QuizOverviewPage({
   const { quizId } = await params;
   const quiz = await getQuiz(quizId);
   if (!quiz) notFound();
-  const [questions, assignments, users, teams] = await Promise.all([
+  const [questions, assignments, users, teams, sessions] = await Promise.all([
     getQuizQuestions(quizId),
     listQuizAssignments(quizId),
     listUsers(),
     listTeams(),
+    listSessionsForQuiz(quizId),
   ]);
 
   const facts: [string, string][] = [
@@ -105,6 +108,21 @@ export default async function QuizOverviewPage({
           <p className="text-muted-foreground mt-3 text-xs">
             Sales users see the quiz only once it is <strong>published</strong>{" "}
             and assigned to them or one of their teams.
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Session links</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <SessionLinks quizId={quizId} sessions={sessions} />
+          <p className="text-muted-foreground mt-3 text-xs">
+            Anyone who opens a link types their name and takes the quiz
+            without a pre-created account — separate from the account-based
+            assignments above. A quiz needs to be <strong>published</strong>{" "}
+            for links to work.
           </p>
         </CardContent>
       </Card>

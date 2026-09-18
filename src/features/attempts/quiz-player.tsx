@@ -24,10 +24,26 @@ import { formatCountdown, seededShuffle } from "./shuffle";
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 
-export function QuizPlayer({ data }: { data: PlayerData }) {
+export function QuizPlayer({
+  data,
+  resultBasePath,
+}: {
+  data: PlayerData;
+  /**
+   * Base path this player links to for "view result" (post-submit redirect
+   * + the finalized banner link) — the final link is
+   * `${resultBasePath}/result/${attempt.id}`. Defaults to the account-based
+   * flow's `/quizzes/[quizId]`. The guest flow
+   * (docs/PUBLIC_SESSION_LINK_PLAN.md) passes `/assessment/[token]` so
+   * guests land on their own result view instead of the account-based one
+   * under `(app)`.
+   */
+  resultBasePath?: string;
+}) {
   const router = useRouter();
   const { attempt, quiz } = data;
   const finalized = attempt.status !== "in_progress";
+  const resultHref = `${resultBasePath ?? `/quizzes/${quiz.id}`}/result/${attempt.id}`;
 
   const questions = useMemo(() => {
     const base = [...data.questions].sort((a, b) => a.sortOrder - b.sortOrder);
@@ -77,10 +93,10 @@ export function QuizPlayer({ data }: { data: PlayerData }) {
         setSubmitting(false);
         return;
       }
-      router.replace(`/quizzes/${quiz.id}/result/${attempt.id}`);
+      router.replace(resultHref);
       router.refresh();
     },
-    [attempt.id, quiz.id, finalized, submitting, router],
+    [attempt.id, quiz.id, finalized, submitting, router, resultHref],
   );
 
   useEffect(() => {
@@ -179,10 +195,7 @@ export function QuizPlayer({ data }: { data: PlayerData }) {
       {finalized ? (
         <Alert>
           This attempt is {attempt.status.replace("_", " ")}.{" "}
-          <a
-            className="underline"
-            href={`/quizzes/${quiz.id}/result/${attempt.id}`}
-          >
+          <a className="underline" href={resultHref}>
             View result
           </a>
         </Alert>

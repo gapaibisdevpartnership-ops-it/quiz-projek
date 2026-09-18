@@ -131,7 +131,8 @@ export async function getSalesPerformance(): Promise<SalesPerformanceRow[]> {
     supabase
       .from("profiles")
       .select("user_id, full_name, email")
-      .eq("role", "sales"),
+      .eq("role", "sales")
+      .eq("is_guest", false),
     supabase
       .from("quiz_attempts")
       .select("user_id, status, percentage, passed")

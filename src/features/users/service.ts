@@ -7,6 +7,7 @@ export async function listUsers(): Promise<Profile[]> {
   const { data, error } = await supabase
     .from("profiles")
     .select("*")
+    .eq("is_guest", false)
     .order("full_name");
   if (error) throw error;
   return (data as ProfileRow[]).map(mapProfile);

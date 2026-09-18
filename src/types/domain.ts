@@ -13,6 +13,7 @@ export interface Profile {
   role: Role;
   status: UserStatus;
   mustChangePassword: boolean;
+  isGuest: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -35,6 +36,7 @@ export interface ProfileRow {
   role: Role;
   status: UserStatus;
   must_change_password: boolean;
+  is_guest: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -48,6 +50,7 @@ export function mapProfile(row: ProfileRow): Profile {
     role: row.role,
     status: row.status,
     mustChangePassword: row.must_change_password ?? false,
+    isGuest: row.is_guest ?? false,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
