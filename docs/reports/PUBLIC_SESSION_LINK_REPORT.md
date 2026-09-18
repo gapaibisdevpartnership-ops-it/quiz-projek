@@ -82,6 +82,48 @@ all clean at every step. Live end-to-end via Playwright as described
 above; all test data (quiz, question, session, guest account + attempt)
 cleaned up afterward.
 
+## Update — full edge-case pass with dummy data (2026-09-18, later same day)
+
+A second, deeper testing pass covering scenarios the first pass didn't:
+roster-restricted links (correct/wrong name), expired links, closed links,
+resuming an in-progress attempt, a mixed single-choice + essay quiz, the
+full grading loop (trainer grades → guest sees final score on reload of
+their own session), and the full automated suite
+(`npm test`/`test:e2e`/`test:chaos`/`build`). All dummy data created for
+this pass was cleaned up afterward; care was taken not to touch data
+belonging to the user's own manual testing of the feature found already
+present (`saya sendiri`, `saya berdua`, `user testing` guest profiles).
+
+**Two real bugs found and fixed:**
+
+1. **Resume was broken.** `startGuestSession()` called
+   `signInAnonymously()` unconditionally on every "Start assessment"
+   click, which always mints a brand-new identity — so reopening a link
+   (or double-clicking) silently created a second attempt instead of
+   resuming the first, since `start_guest_quiz_attempt`'s resume check is
+   keyed on `auth.uid()`. Fixed by checking for an existing anonymous
+   session first.
+2. **`/admin/results` overflowed horizontally at 320px** (iPhone SE),
+   caught by `tests/e2e/responsive.spec.ts`. The table never had an
+   `overflow-x-auto` wrapper; the new "via session link" badge tipped an
+   already-borderline-width table over the edge. Fixed with the same
+   wrapper pattern already used on `admin/analytics/page.tsx`.
+
+Both fixed and re-verified; see commit `f9db0bb`.
+
+**Everything else passed on the first try**: roster allow/reject, link
+expiry, link closure, mixed question types, grading, and the exclusion of
+guests from leaderboard/analytics/Users all worked exactly as designed.
+
+**Pre-existing, unrelated issues found (not this branch's to fix)**: 3
+`tests/integration/rls.test.ts` failures — confirmed via
+`git diff origin/main..HEAD` that this branch touches none of the
+underlying files. One is data contamination on the shared `sales.qa01` QA
+account (real team membership + quiz assignments left over from earlier
+manual testing elsewhere), the other two are a single stale test
+assertion that contradicts this project's own documented, intentional
+`quiz_categories` RLS policy (any authenticated user may read it).
+
 ## Not yet done
 
 - Merge `feature/public-session-link` → `main` → production deploy. The
