@@ -42,12 +42,24 @@ export async function startGuestSession(
 
   const supabase = await createClient();
 
-  const { error: signInError } = await supabase.auth.signInAnonymously();
-  if (signInError) {
-    return {
-      ok: false,
-      error: "Could not start your session. Please try again.",
-    };
+  // signInAnonymously() always mints a brand-new identity — if the browser
+  // already carries a valid anonymous session (e.g. they closed the tab and
+  // reopened the link, or clicked Start twice), reuse it instead of
+  // discarding it. Otherwise start_guest_quiz_attempt's "resume an
+  // in-progress attempt" check can never match (it's keyed on auth.uid(),
+  // which would be different every time) and every click creates a new
+  // guest identity + a new attempt.
+  const {
+    data: { user: existingUser },
+  } = await supabase.auth.getUser();
+  if (!existingUser?.is_anonymous) {
+    const { error: signInError } = await supabase.auth.signInAnonymously();
+    if (signInError) {
+      return {
+        ok: false,
+        error: "Could not start your session. Please try again.",
+      };
+    }
   }
 
   const { error: nameError } = await supabase.rpc(

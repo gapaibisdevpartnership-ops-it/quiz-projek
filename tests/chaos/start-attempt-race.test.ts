@@ -6,20 +6,13 @@ import { SEED_USERS } from "../helpers/seed";
 /**
  * Chaos — Layer 1 (server), scenario #1 (docs/CHAOS_TESTING_PLAN.md).
  *
- * ⚠️ KNOWN GAP — this test is EXPECTED TO FAIL until
- * docs/IMPROVEMENT_BACKLOG.md P1 #6 is fixed. `start_quiz_attempt` has no
- * advisory lock and no partial unique index on (quiz_id, user_id) where
- * status = 'in_progress'. Its "resume?" check, its `count(*) >= max_attempts`
- * check, and its `next attempt_number` computation are three separate
- * unlocked reads — a burst of concurrent calls can interleave so that two of
- * them each compute the SAME "count so far" (before either commits) and then,
- * after the first one commits, the second re-reads a fresh `max(attempt_number)`
- * and inserts a second, distinct attempt — exceeding `max_attempts`.
- *
- * This suite is not part of the default gate (docs/CHAOS_TESTING_PLAN.md) —
- * a red result here is expected and tracked, not a regression to chase down
- * in this PR. Flip the two `expect(...)` calls' inverse once P1 #6 lands (see
- * the TODO below) and this becomes a real regression guard.
+ * ✅ FIXED — docs/IMPROVEMENT_BACKLOG.md P1 #6 / docs/START_ATTEMPT_RACE_FIX_PLAN.md.
+ * `start_quiz_attempt` now takes a transaction-scoped `pg_advisory_xact_lock`
+ * keyed on `(quiz_id, user_id)` before its resume-check / count-check /
+ * attempt_number computation, serializing concurrent calls for the same
+ * pair. Applied to production 2026-09-18
+ * (`supabase/migrations/20260914090000_start_attempt_lock.sql`); this test
+ * is a real regression guard now, not a documented known-gap.
  */
 
 const d = hasSupabaseEnv ? describe : describe.skip;
@@ -122,16 +115,6 @@ d("chaos: start_quiz_attempt race under max_attempts = 1", () => {
       if ((count ?? 0) > 1) violations.push({ round, count: count ?? 0 });
     }
 
-    // TODO(P1 #6): once start_quiz_attempt is fixed to serialise concurrent
-    // starts (advisory lock or a partial unique index on
-    // (quiz_id, user_id) where status = 'in_progress'), this must be:
-    //   expect(violations).toEqual([]);
-    // Today it documents the gap instead of silently skipping it.
-    if (violations.length > 0) {
-      console.warn(
-        `[chaos] start_quiz_attempt race reproduced (P1 #6 open): ${JSON.stringify(violations)}`,
-      );
-    }
     expect(violations, "no round exceeded max_attempts").toEqual([]);
   });
 });

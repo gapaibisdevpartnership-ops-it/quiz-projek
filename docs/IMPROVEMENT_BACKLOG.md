@@ -86,7 +86,14 @@ declares a cron; the API route stays as a manual trigger.
 - **Fix (S–M):** Add an absolute fallback in `attempt_deadline` (e.g. `started_at + interval '24 hours'`)
   or a nightly sweep of very old `in_progress` rows regardless of deadline.
 
-### 6. `start_quiz_attempt` attempt-count race — no lock on (user, quiz)
+### 6. `start_quiz_attempt` attempt-count race — no lock on (user, quiz) — ✅ DONE
+
+Resolved in `supabase/migrations/20260914090000_start_attempt_lock.sql`
+(applied to production 2026-09-18, `docs/START_ATTEMPT_RACE_FIX_PLAN.md`) —
+a `pg_advisory_xact_lock(hashtext(...))` now serializes concurrent calls.
+`tests/chaos/start-attempt-race.test.ts` is a real regression guard again
+(no longer a documented known-gap) and passes.
+
 - **Where:** `supabase/migrations/20260907120000_quiz_engine.sql:151-245` (resume check `:191`,
   count `:200-205`, insert `:211`).
 - **Problem:** Double-click / two tabs can both pass `count(*) >= max_attempts` → exceed the limit
