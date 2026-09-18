@@ -48,6 +48,7 @@ backup-*.sql
 # ad-hoc project status reports (not part of the docs/reports/ convention)
 docs/reports/PROJECT_STATUS_REPORT.md
 docs/reports/project-status-artifact.html
+docs/reports/LAPORAN_PRIBADI.md
 
 # typescript
 *.tsbuildinfo
