@@ -1,9 +1,11 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getAttemptDetail } from "@/features/results/service";
 import { EssayGradeForm } from "@/features/grading/essay-grade-form";
 import { scoreLabel } from "@/lib/scoring";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 export default async function AttemptDetailPage({
@@ -37,16 +39,24 @@ export default async function AttemptDetailPage({
         </CardHeader>
         <CardContent>
           <dl className="grid gap-x-8 gap-y-1 text-sm sm:grid-cols-2">
-            {[
-              ["Objective", scoreLabel(d.autoScore, d.totalPoints)],
-              ["Manual (essays)", d.manualScore != null ? String(d.manualScore) : "—"],
-              ["Final", scoreLabel(d.finalScore, d.totalPoints)],
-              ["Percentage", d.percentage != null ? `${d.percentage}%` : "—"],
+            {(
               [
-                "Result",
-                d.passed == null ? "—" : d.passed ? "Passed" : "Not passed",
-              ],
-            ].map(([k, v]) => (
+                ["Objective", scoreLabel(d.autoScore, d.totalPoints)],
+                ["Manual (essays)", d.manualScore != null ? String(d.manualScore) : "—"],
+                ["Final", scoreLabel(d.finalScore, d.totalPoints)],
+                ["Percentage", d.percentage != null ? `${d.percentage}%` : "—"],
+                [
+                  "Result",
+                  d.passed == null ? (
+                    "—"
+                  ) : (
+                    <Badge variant={d.passed ? "default" : "destructive"}>
+                      {d.passed ? "Passed" : "Not passed"}
+                    </Badge>
+                  ),
+                ],
+              ] as [string, ReactNode][]
+            ).map(([k, v]) => (
               <div key={k} className="flex justify-between border-b py-1">
                 <dt className="text-muted-foreground">{k}</dt>
                 <dd className="font-medium">{v}</dd>

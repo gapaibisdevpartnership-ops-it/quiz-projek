@@ -51,5 +51,7 @@ docs/                  product & engineering specs (source of truth)
 
 ## Roadmap
 
-Phased plan lives in `docs/DEVELOPMENT_PLAN.md`. Current status: **Phase 0
-(setup) complete**. Next: Phase 1 – auth, profiles, roles, RLS baseline.
+Phased plan lives in `docs/DEVELOPMENT_PLAN.md`. All 9 phases (0–8) are
+**complete** and in production. Current work is post-launch hardening and
+feature additions — see `docs/reports/PROJECT_STATUS_REPORT.md` for the
+up-to-date status and `docs/IMPROVEMENT_BACKLOG.md` for open items.

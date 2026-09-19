@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { MoreHorizontal, Trash2, ToggleLeft, ToggleRight } from "lucide-react";
 import type { Category } from "@/types/domain";
 import {
   createCategory,
@@ -11,6 +13,20 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function CategoryManager({
   categories,
@@ -29,6 +45,7 @@ export function CategoryManager({
     startTransition(async () => {
       const res = await createCategory({ name, description: "", isActive: true });
       if (!res.ok) return setError(res.error);
+      toast.success(`"${name}" added`);
       setName("");
       router.refresh();
     });
@@ -41,8 +58,12 @@ export function CategoryManager({
         description: c.description ?? "",
         isActive: !c.isActive,
       });
-      if (!res.ok) setError(res.error);
-      else router.refresh();
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      toast.success(c.isActive ? `"${c.name}" deactivated` : `"${c.name}" activated`);
+      router.refresh();
     });
   }
 
@@ -51,8 +72,12 @@ export function CategoryManager({
       return;
     startTransition(async () => {
       const res = await deleteCategoryPermanently(c.id);
-      if (!res.ok) setError(res.error);
-      else router.refresh();
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      toast.success(`"${c.name}" deleted`);
+      router.refresh();
     });
   }
 
@@ -69,39 +94,65 @@ export function CategoryManager({
           Add
         </Button>
       </div>
-      <ul className="divide-y text-sm">
-        {categories.length === 0 ? (
-          <li className="text-muted-foreground py-2">No categories yet.</li>
-        ) : null}
-        {categories.map((c) => (
-          <li key={c.id} className="flex items-center justify-between py-2">
-            <span className={c.isActive ? "" : "text-muted-foreground line-through"}>
-              {c.name}
-            </span>
-            <div className="flex gap-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                disabled={pending}
-                onClick={() => toggle(c)}
-              >
-                {c.isActive ? "Deactivate" : "Activate"}
-              </Button>
-              {viewerIsSuperAdmin ? (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-destructive hover:text-destructive"
-                  disabled={pending}
-                  onClick={() => remove(c)}
-                >
-                  Delete
-                </Button>
-              ) : null}
-            </div>
-          </li>
-        ))}
-      </ul>
+      {categories.length === 0 ? (
+        <p className="text-muted-foreground py-2 text-sm">No categories yet.</p>
+      ) : (
+        <Table>
+          <TableBody>
+            {categories.map((c) => (
+              <TableRow key={c.id}>
+                <TableCell className="w-full">
+                  <span className={c.isActive ? "" : "text-muted-foreground"}>
+                    {c.name}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <Badge variant={c.isActive ? "default" : "outline"}>
+                    {c.isActive ? "Active" : "Inactive"}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-8"
+                        disabled={pending}
+                        aria-label={`Actions for ${c.name}`}
+                      >
+                        <MoreHorizontal className="size-4" aria-hidden="true" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => toggle(c)}>
+                        {c.isActive ? (
+                          <ToggleLeft aria-hidden="true" />
+                        ) : (
+                          <ToggleRight aria-hidden="true" />
+                        )}
+                        {c.isActive ? "Deactivate" : "Activate"}
+                      </DropdownMenuItem>
+                      {viewerIsSuperAdmin ? (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            variant="destructive"
+                            onClick={() => remove(c)}
+                          >
+                            <Trash2 aria-hidden="true" />
+                            Delete
+                          </DropdownMenuItem>
+                        </>
+                      ) : null}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
     </div>
   );
 }

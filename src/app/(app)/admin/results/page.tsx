@@ -2,6 +2,22 @@ import Link from "next/link";
 import { listAllAttempts } from "@/features/results/service";
 import { formatDateTimeUTC } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
+const STATUS_LABEL: Record<string, string> = {
+  in_progress: "In progress",
+  pending_review: "Pending review",
+  submitted: "Submitted",
+  expired: "Expired",
+};
 
 export default async function ResultsPage() {
   const attempts = await listAllAttempts();
@@ -17,57 +33,64 @@ export default async function ResultsPage() {
           {attempts.length === 0 ? (
             <p className="text-muted-foreground text-sm">No attempts yet.</p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="text-muted-foreground text-left text-xs">
-                  <tr>
-                    <th className="py-2">Quiz</th>
-                    <th>User</th>
-                    <th>#</th>
-                    <th>Status</th>
-                    <th>Score</th>
-                    <th>Submitted</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {attempts.map((a) => (
-                    <tr key={a.id} className="border-t">
-                      <td className="py-2 whitespace-nowrap">
-                        <Link
-                          href={`/admin/results/${a.id}`}
-                          className="font-medium hover:underline"
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Quiz</TableHead>
+                  <TableHead>User</TableHead>
+                  <TableHead>#</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Score</TableHead>
+                  <TableHead>Submitted</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {attempts.map((a) => (
+                  <TableRow key={a.id}>
+                    <TableCell>
+                      <Link
+                        href={`/admin/results/${a.id}`}
+                        className="font-medium hover:underline"
+                      >
+                        {a.quizTitle}
+                      </Link>
+                    </TableCell>
+                    <TableCell>
+                      {a.userName}
+                      {a.isGuest ? (
+                        <Badge variant="secondary" className="ml-1.5">
+                          via session link
+                        </Badge>
+                      ) : null}
+                    </TableCell>
+                    <TableCell>{a.attemptNumber}</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          a.status === "submitted" ? "default" : "outline"
+                        }
+                      >
+                        {STATUS_LABEL[a.status] ?? a.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {a.percentage != null ? `${a.percentage}%` : "—"}
+                      {a.passed == null ? null : (
+                        <Badge
+                          variant={a.passed ? "default" : "destructive"}
+                          className="ml-1.5"
                         >
-                          {a.quizTitle}
-                        </Link>
-                      </td>
-                      <td className="whitespace-nowrap">
-                        {a.userName}
-                        {a.isGuest ? (
-                          <span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                            via session link
-                          </span>
-                        ) : null}
-                      </td>
-                      <td>{a.attemptNumber}</td>
-                      <td className="whitespace-nowrap">
-                        {a.status.replace("_", " ")}
-                      </td>
-                      <td className="whitespace-nowrap">
-                        {a.percentage != null ? `${a.percentage}%` : "—"}
-                        {a.passed == null
-                          ? ""
-                          : a.passed
-                            ? " ✓"
-                            : " ✗"}
-                      </td>
-                      <td className="text-muted-foreground whitespace-nowrap text-xs">
-                        {formatDateTimeUTC(a.submittedAt)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                          {a.passed ? "Passed" : "Failed"}
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-xs">
+                      {formatDateTimeUTC(a.submittedAt)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           )}
         </CardContent>
       </Card>

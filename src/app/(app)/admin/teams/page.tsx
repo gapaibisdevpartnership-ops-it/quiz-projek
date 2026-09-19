@@ -17,13 +17,10 @@ export default async function TeamsPage() {
   );
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-xl font-semibold">Teams</h1>
-      <TeamsManager
-        teams={bundles}
-        allUsers={allUsers}
-        viewerIsSuperAdmin={profile.role === "super_admin"}
-      />
-    </div>
+    <TeamsManager
+      teams={bundles}
+      allUsers={allUsers}
+      viewerIsSuperAdmin={profile.role === "super_admin"}
+    />
   );
 }

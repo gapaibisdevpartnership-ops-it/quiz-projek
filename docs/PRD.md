@@ -29,7 +29,10 @@ Admin/Trainer users can create, edit, configure, publish, assign, and review qui
 - view all results;
 - manual grading;
 - analytics;
-- system configuration.
+- system configuration;
+- **permanently (hard-)delete** users, questions, quizzes, teams, session
+  links, and categories — a distinct, super-admin-only action separate from
+  the soft-delete/status toggles available to Admin/Trainer.
 
 ### Admin / Trainer
 
@@ -55,6 +58,17 @@ Admin/Trainer users can create, edit, configure, publish, assign, and review qui
 - view leaderboard when enabled.
 
 Sales must not have access to admin features or answer keys before permitted.
+
+### Guest (public session link)
+
+- no account required — enters via a shareable session link (Supabase
+  Anonymous Auth);
+- can start/resume/submit an attempt on the quiz that link is scoped to,
+  subject to the link's capacity, schedule, and per-candidate attempt
+  overrides set by the trainer;
+- has no access to the account-based app shell (dashboard, history,
+  leaderboard, admin) — scoped strictly to the assessment flow at
+  `/assessment/[token]`.
 
 ## V1 Question Types
 

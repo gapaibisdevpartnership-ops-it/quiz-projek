@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import type { QuizStatus } from "@/lib/constants";
 import { deleteQuizPermanently, setQuizStatus } from "@/features/quizzes/actions";
 import { Button } from "@/components/ui/button";
@@ -22,12 +23,21 @@ export function QuizStatusActions({
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
+  const STATUS_TOAST: Record<QuizStatus, string> = {
+    draft: "Moved to draft",
+    published: "Quiz published",
+    archived: "Quiz archived",
+  };
+
   const go = (next: QuizStatus) =>
     start(async () => {
       setError(null);
       const res = await setQuizStatus(quizId, next);
       if (!res.ok) setError(res.error);
-      else router.refresh();
+      else {
+        toast.success(STATUS_TOAST[next]);
+        router.refresh();
+      }
     });
 
   function handleDelete() {
@@ -39,6 +49,7 @@ export function QuizStatusActions({
     start(async () => {
       const res = await deleteQuizPermanently(quizId);
       if (!res.ok) return setError(res.error);
+      toast.success(`"${quizTitle}" deleted`);
       router.push("/admin/quizzes");
       router.refresh();
     });

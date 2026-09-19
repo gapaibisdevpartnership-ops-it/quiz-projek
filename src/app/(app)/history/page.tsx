@@ -5,6 +5,7 @@ import { listMyAttempts } from "@/features/attempts/service";
 import { createClient } from "@/lib/supabase/server";
 import { formatDateTimeUTC } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 export default async function HistoryPage() {
   const profile = await requireProfile();
@@ -64,13 +65,28 @@ export default async function HistoryPage() {
                         : "in progress"}
                     </p>
                   </div>
-                  <span>
-                    {a.status === "pending_review"
-                      ? "Pending review"
-                      : a.percentage != null
-                        ? `${a.percentage}%${a.passed ? " · Passed" : a.passed === false ? " · Not passed" : ""}`
-                        : a.status.replace("_", " ")}
-                  </span>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    {a.percentage != null ? (
+                      <span className="font-medium">{a.percentage}%</span>
+                    ) : null}
+                    <Badge
+                      variant={
+                        a.passed === true
+                          ? "default"
+                          : a.passed === false
+                            ? "destructive"
+                            : "outline"
+                      }
+                    >
+                      {a.status === "pending_review"
+                        ? "Pending review"
+                        : a.passed === true
+                          ? "Passed"
+                          : a.passed === false
+                            ? "Not passed"
+                            : a.status.replace("_", " ")}
+                    </Badge>
+                  </div>
                 </li>
               ))}
             </ul>

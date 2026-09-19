@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { toast } from "sonner";
 import { QUESTION_TYPES, type QuestionType } from "@/lib/constants";
 import {
   QUESTION_TYPE_LABELS,
@@ -157,7 +158,6 @@ export function QuestionEditor({ categories, scopeId, question }: Props) {
     return [emptyOption(), emptyOption()];
   });
 
-  const isChoice = type === "single_choice" || type === "multiple_choice";
   const isEssay = type === "essay";
 
   function changeType(next: QuestionType) {
@@ -234,6 +234,7 @@ export function QuestionEditor({ categories, scopeId, question }: Props) {
         setError(res.error);
         return;
       }
+      toast.success(question ? "Question saved" : "Question created");
       router.push("/admin/questions");
       router.refresh();
     });
@@ -464,7 +465,6 @@ export function QuestionEditor({ categories, scopeId, question }: Props) {
           </CardContent>
         </Card>
       )}
-      {isChoice ? null : null}
     </div>
   );
 }

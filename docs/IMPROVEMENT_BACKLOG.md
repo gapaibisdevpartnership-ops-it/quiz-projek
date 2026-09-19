@@ -1,7 +1,8 @@
 # Improvement Backlog
 
-**Date:** 2026-09-08
-**Status:** Assessment only — no code changed. Prioritized roadmap for post–Phase 8 hardening.
+**Date:** 2026-09-08 (original assessment); items updated through 2026-09-19 as they're resolved.
+**Status:** Living backlog for post–Phase 8 hardening. See `docs/reports/PROJECT_STATUS_REPORT.md`
+for the current overall project status.
 
 ## Context
 
@@ -106,7 +107,17 @@ a `pg_advisory_xact_lock(hashtext(...))` now serializes concurrent calls.
   `docs/reports/CHAOS_TESTING_REPORT.md`. Flip that test's assertion to a hard
   requirement once this is fixed.
 
-### 7. Deleting a user destroys or blocks attempt history inconsistently
+### 7. Deleting a user destroys or blocks attempt history inconsistently — largely ✅ DONE
+
+Addressed by the super-admin-only hard-delete features
+(`docs/HARD_DELETE_USER_PLAN.md`, `docs/HARD_DELETE_ENTITIES_PLAN.md`,
+commits `839b4df`, `8f7e806`): permanent deletion is now a distinct,
+explicitly-gated `super_admin`-only action, separate from the existing
+soft-delete/status toggles which remain the default removal path for
+everyone else. Re-verify the authored-content FK behavior (`created_by`,
+`assigned_by`, `graded_by` columns) is still exercised correctly under the
+new hard-delete RPCs; original problem description kept below for context.
+
 - **Where:** `quiz_attempts.user_id ... on delete cascade`
   (`20260907120000_quiz_engine.sql:13`); authored-content FKs (`questions.created_by`,
   `quizzes.created_by`, `quiz_assignments.assigned_by`, `attempt_answers.graded_by`) have **no**
@@ -279,13 +290,14 @@ a `pg_advisory_xact_lock(hashtext(...))` now serializes concurrent calls.
 
 ## Suggested order
 
-1. **P0 #1–3** (privilege escalation) — one migration + `admin_update_user` RPC + `requireSuperAdmin`.
-2. **P1 #4–5** (cron plan + untimed-quiz expiry) — tiny, unblocks the feature just shipped.
-3. **P1 #8** (private storage bucket) if any quiz images could reveal answers.
-4. **P1 #9–10** (error mapper + error boundaries + logging) — one pass across all actions.
-5. **P1 #6–7** (attempt-start lock, user-delete strategy).
-6. **P2** analytics indexes + `.in()` filters (#20–21) are near-free; batch the rest by area.
-7. **P3** CI: enable the e2e/integration gate (#39–40) before relying on the suite.
+Items #1–3 (privilege escalation), #4 (cron), #6 (attempt-start lock), and
+#7 (user-delete, largely) are done — see their entries above. Remaining:
+
+1. **P1 #5** (untimed-quiz expiry fallback) — small, still open.
+2. **P1 #8** (private storage bucket) if any quiz images could reveal answers.
+3. **P1 #9–10** (error mapper + error boundaries + logging) — one pass across all actions.
+4. **P2** analytics indexes + `.in()` filters (#20–21) are near-free; batch the rest by area.
+5. **P3** CI: enable the e2e/integration gate (#39–40) before relying on the suite.
 
 ## Verification per change
 

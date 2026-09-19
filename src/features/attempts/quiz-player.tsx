@@ -19,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert } from "@/components/ui/alert";
+import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { formatCountdown, seededShuffle } from "./shuffle";
 
@@ -173,12 +174,16 @@ export function QuizPlayer({
   return (
     <div className="space-y-4">
       <header className="flex flex-wrap items-center justify-between gap-2 border-b pb-3">
-        <div>
+        <div className="min-w-48 flex-1 space-y-1">
           <h1 className="font-semibold">{quiz.title}</h1>
           <p className="text-muted-foreground text-sm">
             Question {current + 1} of {questions.length} · {answeredCount}{" "}
             answered
           </p>
+          <Progress
+            value={(answeredCount / questions.length) * 100}
+            className="h-1.5"
+          />
         </div>
         {remaining != null ? (
           <span
@@ -213,6 +218,8 @@ export function QuizPlayer({
             <button
               key={x.id}
               onClick={() => setCurrent(i)}
+              aria-label={`Question ${i + 1}${done ? ", answered" : ", not answered"}${i === current ? ", current" : ""}`}
+              aria-current={i === current ? "step" : undefined}
               className={cn(
                 "h-8 w-8 rounded border text-xs",
                 i === current && "ring-2 ring-ring",

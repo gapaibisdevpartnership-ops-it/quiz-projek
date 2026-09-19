@@ -1,26 +1,28 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Copy, Loader2, Pencil, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import { Copy, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import {
   deleteQuestionPermanently,
   duplicateQuestion,
 } from "@/features/questions/actions";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 /**
- * Edit + Duplicate actions for one row in the Question Bank list
+ * Edit + Duplicate + Delete actions for one row in the Question Bank list
  * (docs/DUPLICATE_QUESTION_PLAN.md). A small client island so a failed
  * duplicate shows an error instead of silently doing nothing, and a
  * double-click can't fire the action twice.
- *
- * Built on the shared Button/buttonVariants (not hand-rolled Tailwind) so
- * focus ring, disabled state, and hit-area match the rest of the app. This
- * project's `Button` doesn't support `asChild` (no Radix Slot), so Edit — a
- * `<Link>` that must look like a button — uses `buttonVariants()` as a
- * className directly, same pattern as "+ New question" on this page.
  */
 export function QuestionRowActions({
   questionId,
@@ -33,13 +35,15 @@ export function QuestionRowActions({
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
-  const [error, setError] = useState<string | null>(null);
 
   function handleDuplicate() {
-    setError(null);
     start(async () => {
       const res = await duplicateQuestion(questionId);
-      if (!res.ok) return setError(res.error);
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      toast.success("Question duplicated");
       router.refresh();
     });
   }
@@ -48,57 +52,51 @@ export function QuestionRowActions({
     const label = questionText || "this question";
     if (!window.confirm(`Delete "${label}" permanently? This cannot be undone.`))
       return;
-    setError(null);
     start(async () => {
       const res = await deleteQuestionPermanently(questionId);
-      if (!res.ok) return setError(res.error);
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      toast.success(`"${label}" deleted`);
       router.refresh();
     });
   }
 
   return (
-    <div className="flex shrink-0 flex-col items-end gap-1">
-      <div className="flex items-center gap-1">
-        <Link
-          href={`/admin/questions/${questionId}/edit`}
-          className={buttonVariants({ variant: "ghost", size: "sm" })}
-        >
-          <Pencil className="size-3.5" aria-hidden="true" />
-          Edit
-        </Link>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
         <Button
-          type="button"
           variant="ghost"
-          size="sm"
+          size="icon"
+          className="size-8"
           disabled={pending}
-          onClick={handleDuplicate}
+          aria-label={`Actions for ${questionText || "this question"}`}
         >
-          {pending ? (
-            <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
-          ) : (
-            <Copy className="size-3.5" aria-hidden="true" />
-          )}
-          {pending ? "Duplicating…" : "Duplicate"}
+          <MoreHorizontal className="size-4" aria-hidden="true" />
         </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem asChild>
+          <Link href={`/admin/questions/${questionId}/edit`}>
+            <Pencil aria-hidden="true" />
+            Edit
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleDuplicate}>
+          <Copy aria-hidden="true" />
+          Duplicate
+        </DropdownMenuItem>
         {viewerIsSuperAdmin ? (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="text-destructive hover:text-destructive"
-            disabled={pending}
-            onClick={handleDelete}
-          >
-            <Trash2 className="size-3.5" aria-hidden="true" />
-            Delete
-          </Button>
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem variant="destructive" onClick={handleDelete}>
+              <Trash2 aria-hidden="true" />
+              Delete
+            </DropdownMenuItem>
+          </>
         ) : null}
-      </div>
-      {error ? (
-        <p className="text-destructive text-xs" role="alert">
-          {error}
-        </p>
-      ) : null}
-    </div>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

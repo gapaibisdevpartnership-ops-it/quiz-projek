@@ -5,9 +5,17 @@ import { isAdminRole } from "@/lib/constants";
 import { getMyAssignedQuiz } from "@/features/assignments/service";
 import { getQuiz } from "@/features/quizzes/service";
 import { listMyAttempts } from "@/features/attempts/service";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 import { formatDateTimeUTC } from "@/lib/format";
+
+const STATUS_LABEL: Record<string, string> = {
+  submitted: "Submitted",
+  pending_review: "Pending review",
+  expired: "Expired",
+};
 
 export default async function QuizDetailPage({
   params,
@@ -80,43 +88,45 @@ export default async function QuizDetailPage({
           to see the questions; assigned sales users take it from here.
         </p>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {inProgress ? (
-            <Link
-              href={`/quizzes/${quizId}/attempt/${inProgress.id}`}
-              className={buttonVariants()}
-            >
-              Resume attempt
-            </Link>
+            <Button asChild>
+              <Link href={`/quizzes/${quizId}/attempt/${inProgress.id}`}>
+                Resume attempt
+              </Link>
+            </Button>
           ) : canStart ? (
-            <Link
-              href={`/quizzes/${quizId}/start`}
-              className={buttonVariants()}
-            >
-              Start quiz
-            </Link>
+            <Button asChild>
+              <Link href={`/quizzes/${quizId}/start`}>Start quiz</Link>
+            </Button>
           ) : (
             <p className="text-sm font-medium">
               You have used all {quiz.maxAttempts} attempt
               {quiz.maxAttempts === 1 ? "" : "s"}.
             </p>
           )}
-          <p className="text-muted-foreground text-xs">
-            {used} of {quiz.maxAttempts} attempt
-            {quiz.maxAttempts === 1 ? "" : "s"} used.
-          </p>
+          <div className="max-w-48 space-y-1">
+            <Progress value={(used / quiz.maxAttempts) * 100} />
+            <p className="text-muted-foreground text-xs">
+              {used} of {quiz.maxAttempts} attempt
+              {quiz.maxAttempts === 1 ? "" : "s"} used
+            </p>
+          </div>
           {attempts.filter((a) => a.status !== "in_progress").length ? (
-            <ul className="text-sm">
+            <ul className="divide-y text-sm">
               {attempts
                 .filter((a) => a.status !== "in_progress")
                 .map((a) => (
-                  <li key={a.id}>
+                  <li key={a.id} className="flex items-center gap-2 py-1.5">
                     <Link
-                      className="underline"
+                      className="hover:underline"
                       href={`/quizzes/${quizId}/result/${a.id}`}
                     >
-                      Attempt #{a.attemptNumber} — {a.status.replace("_", " ")}
+                      Attempt #{a.attemptNumber}
                     </Link>
+                    <Badge variant="outline">
+                      {STATUS_LABEL[a.status] ?? a.status}
+                    </Badge>
                   </li>
                 ))}
             </ul>

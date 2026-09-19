@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { requireProfile } from "@/features/auth/service";
 import {
   Card,
@@ -5,15 +6,35 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+
+const ROLE_LABEL: Record<string, string> = {
+  super_admin: "Super Admin",
+  admin: "Trainer",
+  sales: "Sales",
+};
 
 export default async function ProfilePage() {
   const profile = await requireProfile();
 
-  const rows: [string, string][] = [
+  const rows: [string, ReactNode][] = [
     ["Name", profile.fullName || "—"],
     ["Email", profile.email],
-    ["Role", profile.role],
-    ["Status", profile.status],
+    [
+      "Role",
+      <Badge key="role" variant="secondary">
+        {ROLE_LABEL[profile.role] ?? profile.role}
+      </Badge>,
+    ],
+    [
+      "Status",
+      <Badge
+        key="status"
+        variant={profile.status === "active" ? "default" : "outline"}
+      >
+        {profile.status}
+      </Badge>,
+    ],
   ];
 
   return (

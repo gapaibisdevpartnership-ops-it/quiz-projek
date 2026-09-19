@@ -4,6 +4,7 @@ import { isAdminRole } from "@/lib/constants";
 import { listMyAssignedQuizzes } from "@/features/assignments/service";
 import { listQuizzes } from "@/features/quizzes/service";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { formatDateTimeUTC } from "@/lib/format";
 
 export default async function QuizzesPage() {
@@ -51,12 +52,9 @@ export default async function QuizzesPage() {
                     <li>Closes: {formatDateTimeUTC(q.endAt)}</li>
                   ) : null}
                 </ul>
-                <Link
-                  href={`/quizzes/${q.id}`}
-                  className="inline-block text-sm underline"
-                >
-                  Open
-                </Link>
+                <Button size="sm" asChild>
+                  <Link href={`/quizzes/${q.id}`}>Open</Link>
+                </Button>
               </CardContent>
             </Card>
           ))}

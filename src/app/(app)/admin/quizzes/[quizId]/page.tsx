@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireProfile } from "@/features/auth/service";
@@ -14,8 +15,15 @@ import { QuizStatusActions } from "@/features/quizzes/quiz-status-actions";
 import { QuizAssignments } from "@/features/assignments/quiz-assignments";
 import { SessionLinks } from "@/features/sessions/session-links";
 import { formatDateTimeUTC } from "@/lib/format";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+
+const STATUS_VARIANT: Record<string, "default" | "secondary" | "outline"> = {
+  draft: "secondary",
+  published: "default",
+  archived: "outline",
+};
 
 export default async function QuizOverviewPage({
   params,
@@ -36,8 +44,13 @@ export default async function QuizOverviewPage({
     ]);
   const viewerIsSuperAdmin = profile.role === "super_admin";
 
-  const facts: [string, string][] = [
-    ["Status", quiz.status],
+  const facts: [string, ReactNode][] = [
+    [
+      "Status",
+      <Badge key="status" variant={STATUS_VARIANT[quiz.status] ?? "outline"}>
+        {quiz.status}
+      </Badge>,
+    ],
     ["Questions", String(questions.length)],
     ["Total points", String(totalPoints(questions))],
     ["Passing score", `${quiz.passingScore}%`],
@@ -61,24 +74,17 @@ export default async function QuizOverviewPage({
           ) : null}
         </div>
         <div className="flex gap-2">
-          <Link
-            href={`/admin/quizzes/${quizId}/edit`}
-            className={buttonVariants({ variant: "outline" })}
-          >
-            Edit settings
-          </Link>
-          <Link
-            href={`/admin/quizzes/${quizId}/questions`}
-            className={buttonVariants({ variant: "outline" })}
-          >
-            Edit questions
-          </Link>
-          <Link
-            href={`/admin/quizzes/${quizId}/preview`}
-            className={buttonVariants()}
-          >
-            Preview
-          </Link>
+          <Button variant="outline" asChild>
+            <Link href={`/admin/quizzes/${quizId}/edit`}>Edit settings</Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href={`/admin/quizzes/${quizId}/questions`}>
+              Edit questions
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link href={`/admin/quizzes/${quizId}/preview`}>Preview</Link>
+          </Button>
         </div>
       </div>
 

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import type { Profile, Team } from "@/types/domain";
 import type { ResolvedAssignment } from "@/features/assignments/service";
 import { assignQuiz, unassignQuiz } from "@/features/assignments/actions";
@@ -27,12 +28,18 @@ export function QuizAssignments({
   const [userId, setUserId] = useState("");
   const [teamId, setTeamId] = useState("");
 
-  const run = (fn: () => Promise<{ ok: boolean; error?: string }>) =>
+  const run = (
+    fn: () => Promise<{ ok: boolean; error?: string }>,
+    successMessage?: string,
+  ) =>
     start(async () => {
       setError(null);
       const res = await fn();
       if (!res.ok) setError(res.error ?? "Action failed.");
-      else router.refresh();
+      else {
+        if (successMessage) toast.success(successMessage);
+        router.refresh();
+      }
     });
 
   return (
@@ -82,16 +89,26 @@ export function QuizAssignments({
           disabled={
             pending || (mode === "user" ? !userId : !teamId)
           }
-          onClick={() =>
-            run(() =>
-              assignQuiz({
-                quizId,
-                mode,
-                userId: mode === "user" ? userId : undefined,
-                teamId: mode === "team" ? teamId : undefined,
-              }),
-            )
-          }
+          onClick={() => {
+            const target =
+              mode === "user"
+                ? users.find((u) => u.userId === userId)
+                : teams.find((t) => t.id === teamId);
+            const label =
+              target && "fullName" in target
+                ? target.fullName || target.email
+                : target?.name;
+            run(
+              () =>
+                assignQuiz({
+                  quizId,
+                  mode,
+                  userId: mode === "user" ? userId : undefined,
+                  teamId: mode === "team" ? teamId : undefined,
+                }),
+              `Assigned to ${label ?? "target"}`,
+            );
+          }}
         >
           Assign
         </Button>
@@ -108,7 +125,12 @@ export function QuizAssignments({
               size="sm"
               variant="ghost"
               disabled={pending}
-              onClick={() => run(() => unassignQuiz(quizId, a.id))}
+              onClick={() =>
+                run(
+                  () => unassignQuiz(quizId, a.id),
+                  `${a.targetLabel} removed`,
+                )
+              }
             >
               Remove
             </Button>

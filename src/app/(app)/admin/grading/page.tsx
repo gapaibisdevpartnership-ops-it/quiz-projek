@@ -2,6 +2,7 @@ import Link from "next/link";
 import { listGradingQueue } from "@/features/grading/service";
 import { formatDateTimeUTC } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 
 export default async function GradingPage() {
   const queue = await listGradingQueue();
@@ -37,9 +38,18 @@ export default async function GradingPage() {
                       {formatDateTimeUTC(item.submittedAt)}
                     </p>
                   </div>
-                  <span className="text-xs">
-                    {item.essaysGraded}/{item.essaysTotal} essays graded
-                  </span>
+                  <div className="w-32 shrink-0 space-y-1">
+                    <Progress
+                      value={
+                        item.essaysTotal === 0
+                          ? 0
+                          : (item.essaysGraded / item.essaysTotal) * 100
+                      }
+                    />
+                    <p className="text-muted-foreground text-right text-xs">
+                      {item.essaysGraded}/{item.essaysTotal} graded
+                    </p>
+                  </div>
                 </li>
               ))}
             </ul>

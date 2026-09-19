@@ -3,6 +3,14 @@ import { notFound } from "next/navigation";
 import { getQuiz } from "@/features/quizzes/service";
 import { getQuestionAnalytics } from "@/features/analytics/service";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export default async function QuizAnalyticsPage({
   params,
@@ -33,32 +41,32 @@ export default async function QuizAnalyticsPage({
               No answered objective questions yet.
             </p>
           ) : (
-            <table className="w-full text-sm">
-              <thead className="text-muted-foreground text-left text-xs">
-                <tr>
-                  <th className="py-2">Question</th>
-                  <th>Type</th>
-                  <th>Answered</th>
-                  <th>Correct</th>
-                  <th>Correct rate</th>
-                </tr>
-              </thead>
-              <tbody>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Question</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Answered</TableHead>
+                  <TableHead>Correct</TableHead>
+                  <TableHead>Correct rate</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {stats.map((s, i) => (
-                  <tr key={i} className="border-t align-top">
-                    <td className="max-w-md py-2">
+                  <TableRow key={i} className="align-top">
+                    <TableCell className="max-w-md whitespace-normal">
                       {s.questionText || "(image-only)"}
-                    </td>
-                    <td>{s.type.replace("_", " ")}</td>
-                    <td>{s.answered}</td>
-                    <td>{s.correct}</td>
-                    <td>
+                    </TableCell>
+                    <TableCell>{s.type.replace("_", " ")}</TableCell>
+                    <TableCell>{s.answered}</TableCell>
+                    <TableCell>{s.correct}</TableCell>
+                    <TableCell>
                       {s.correctRate == null ? "—" : `${s.correctRate}%`}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           )}
           <p className="text-muted-foreground mt-3 text-xs">
             Essay questions are excluded — they have no objective correct answer.

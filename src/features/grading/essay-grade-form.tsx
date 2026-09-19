@@ -2,17 +2,19 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { gradeEssay } from "@/features/grading/actions";
 import { matchKeywords } from "@/features/grading/keyword-match";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 
-const BADGE_STYLES: Record<string, string> = {
-  likely_correct: "bg-emerald-100 text-emerald-800",
-  partial: "bg-amber-100 text-amber-800",
-  likely_incorrect: "bg-rose-100 text-rose-800",
+const BADGE_VARIANT: Record<string, "default" | "secondary" | "destructive"> = {
+  likely_correct: "default",
+  partial: "secondary",
+  likely_incorrect: "destructive",
 };
 
 const BADGE_LABELS: Record<string, string> = {
@@ -58,6 +60,7 @@ export function EssayGradeForm({
       const res = await gradeEssay(answerId, n, feedback, attemptId);
       if (!res.ok) return setError(res.error);
       setSaved(true);
+      toast.success(`Graded ${n}/${maxPoints}`);
       router.refresh();
     });
   }
@@ -75,12 +78,10 @@ export function EssayGradeForm({
   return (
     <div className="space-y-2 rounded-md border bg-muted/30 p-3">
       {suggestion ? (
-        <span
-          className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${BADGE_STYLES[suggestion.label]}`}
-        >
+        <Badge variant={BADGE_VARIANT[suggestion.label]}>
           {BADGE_LABELS[suggestion.label]} ({suggestion.matched}/
           {suggestion.total} keywords) — suggestion only
-        </span>
+        </Badge>
       ) : null}
       {error ? <Alert variant="destructive">{error}</Alert> : null}
       <div className="flex flex-wrap items-end gap-2">
@@ -117,9 +118,7 @@ export function EssayGradeForm({
         >
           Mark Wrong
         </Button>
-        {saved ? (
-          <span className="text-xs text-emerald-600">Graded</span>
-        ) : null}
+        {saved ? <Badge variant="default">Graded</Badge> : null}
       </div>
       <Textarea
         placeholder="Feedback for the trainee (optional)"

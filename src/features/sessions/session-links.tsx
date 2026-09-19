@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import type { AssessmentSession } from "@/features/sessions/service";
 import {
   closeSession,
@@ -15,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { formatDateTimeUTC } from "@/lib/format";
 
 const EXPIRY_OPTIONS = [
@@ -70,6 +72,7 @@ export function SessionLinks({
           : null,
       });
       if (!res.ok) return setError(res.error);
+      toast.success("Session link created");
       setLabel("");
       setExpiryDays("");
       setOpensDays("");
@@ -88,6 +91,9 @@ export function SessionLinks({
           ? await closeSession(quizId, session.id)
           : await reopenSession(quizId, session.id);
       if (!res.ok) return setError(res.error);
+      toast.success(
+        session.status === "active" ? "Link closed" : "Link reopened",
+      );
       router.refresh();
     });
   }
@@ -103,6 +109,7 @@ export function SessionLinks({
     start(async () => {
       const res = await deleteSessionPermanently(quizId, session.id);
       if (!res.ok) return setError(res.error);
+      toast.success(`"${session.label || "Link"}" deleted`);
       router.refresh();
     });
   }
@@ -210,15 +217,9 @@ export function SessionLinks({
                 <span className="font-medium text-sm">
                   {s.label || "Untitled link"}
                 </span>
-                <span
-                  className={
-                    s.status === "active"
-                      ? "rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800"
-                      : "rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
-                  }
-                >
+                <Badge variant={s.status === "active" ? "default" : "outline"}>
                   {s.status}
-                </span>
+                </Badge>
                 {s.candidateRoster ? (
                   <span className="text-muted-foreground text-xs">
                     {s.candidateRoster.length} allowed name
@@ -230,15 +231,11 @@ export function SessionLinks({
                   </span>
                 )}
                 {s.startsAt && new Date(s.startsAt) > new Date() ? (
-                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
-                    not open yet
-                  </span>
+                  <Badge variant="secondary">not open yet</Badge>
                 ) : null}
                 {s.maxCandidates != null &&
                 s.candidatesUsed >= s.maxCandidates ? (
-                  <span className="rounded-full bg-rose-100 px-2 py-0.5 text-xs font-medium text-rose-800">
-                    full
-                  </span>
+                  <Badge variant="destructive">full</Badge>
                 ) : null}
               </div>
               <p className="text-muted-foreground text-xs">

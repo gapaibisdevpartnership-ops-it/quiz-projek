@@ -4,6 +4,7 @@ import { validateSessionToken } from "@/features/assessment/service";
 import { scoreLabel } from "@/lib/scoring";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert } from "@/components/ui/alert";
+import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -44,6 +45,34 @@ export default async function GuestResultPage({
         </Alert>
       ) : null}
 
+      {!pending && showNumbers && attempt.passed != null ? (
+        <div
+          className={cn(
+            "rounded-xl border p-6 text-center",
+            attempt.passed
+              ? "border-primary/30 bg-primary/5"
+              : "border-destructive/30 bg-destructive/5",
+          )}
+        >
+          <p
+            className={cn(
+              "text-5xl font-semibold tabular-nums",
+              attempt.passed ? "text-primary" : "text-destructive",
+            )}
+          >
+            {attempt.percentage != null ? `${attempt.percentage}%` : "—"}
+          </p>
+          <p
+            className={cn(
+              "mt-1 text-sm font-medium",
+              attempt.passed ? "text-primary" : "text-destructive",
+            )}
+          >
+            {attempt.passed ? "Passed" : "Not passed"}
+          </p>
+        </div>
+      ) : null}
+
       <Card>
         <CardHeader>
           <CardTitle>Attempt #{attempt.attemptNumber}</CardTitle>
@@ -59,20 +88,6 @@ export default async function GuestResultPage({
                       pending
                         ? "Awaiting grading"
                         : scoreLabel(attempt.finalScore, attempt.totalPoints),
-                    ],
-                    [
-                      "Percentage",
-                      attempt.percentage != null
-                        ? `${attempt.percentage}%`
-                        : "—",
-                    ],
-                    [
-                      "Result",
-                      attempt.passed == null
-                        ? "—"
-                        : attempt.passed
-                          ? "Passed"
-                          : "Not passed",
                     ],
                   ] as [string, string][])
                 : []),

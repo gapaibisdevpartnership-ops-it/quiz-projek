@@ -3,6 +3,8 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { toast } from "sonner";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import type { Question, QuizQuestionWithQuestion } from "@/types/domain";
 import { QUESTION_TYPE_LABELS } from "@/lib/validation/question";
 import {
@@ -30,12 +32,18 @@ export function QuizQuestionsBuilder({
   const [error, setError] = useState<string | null>(null);
   const refresh = () => router.refresh();
 
-  const run = (fn: () => Promise<{ ok: boolean; error?: string }>) =>
+  const run = (
+    fn: () => Promise<{ ok: boolean; error?: string }>,
+    successMessage?: string,
+  ) =>
     start(async () => {
       setError(null);
       const res = await fn();
       if (!res.ok) setError(res.error ?? "Action failed.");
-      else refresh();
+      else {
+        if (successMessage) toast.success(successMessage);
+        refresh();
+      }
     });
 
   function move(index: number, dir: -1 | 1) {
@@ -77,20 +85,20 @@ export function QuizQuestionsBuilder({
                 >
                   <div className="flex flex-col">
                     <button
-                      className="text-xs disabled:opacity-30"
+                      className="rounded text-muted-foreground hover:text-foreground disabled:opacity-30"
                       disabled={pending || i === 0}
                       onClick={() => move(i, -1)}
                       aria-label="Move up"
                     >
-                      ▲
+                      <ChevronUp className="size-4" aria-hidden="true" />
                     </button>
                     <button
-                      className="text-xs disabled:opacity-30"
+                      className="rounded text-muted-foreground hover:text-foreground disabled:opacity-30"
                       disabled={pending || i === attached.length - 1}
                       onClick={() => move(i, 1)}
                       aria-label="Move down"
                     >
-                      ▼
+                      <ChevronDown className="size-4" aria-hidden="true" />
                     </button>
                   </div>
                   <div className="min-w-0 flex-1">
@@ -120,7 +128,12 @@ export function QuizQuestionsBuilder({
                     variant="ghost"
                     size="sm"
                     disabled={pending}
-                    onClick={() => run(() => removeQuizQuestion(quizId, a.id))}
+                    onClick={() =>
+                      run(
+                        () => removeQuizQuestion(quizId, a.id),
+                        "Question removed",
+                      )
+                    }
                   >
                     Remove
                   </Button>
@@ -163,7 +176,12 @@ export function QuizQuestionsBuilder({
                     size="sm"
                     variant="outline"
                     disabled={pending}
-                    onClick={() => run(() => addQuestionToQuiz(quizId, q.id))}
+                    onClick={() =>
+                      run(
+                        () => addQuestionToQuiz(quizId, q.id),
+                        "Question added",
+                      )
+                    }
                   >
                     Add
                   </Button>

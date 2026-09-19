@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import type { Category, Quiz } from "@/types/domain";
 import {
   quizSettingsSchema,
@@ -13,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Alert } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -78,6 +80,7 @@ export function QuizSettingsForm({
         ? await updateQuiz(quiz.id, parsed.data)
         : await createQuiz(parsed.data);
       if (!res.ok) return setError(res.error);
+      toast.success(quiz ? "Quiz settings saved" : "Quiz created");
       router.push(
         quiz ? `/admin/quizzes/${quiz.id}` : `/admin/quizzes/${res.id}/questions`,
       );
@@ -90,10 +93,9 @@ export function QuizSettingsForm({
     label: string,
   ) => (
     <label className="flex items-center gap-2 text-sm">
-      <input
-        type="checkbox"
+      <Checkbox
         checked={f[k]}
-        onChange={(e) => set(k, e.target.checked)}
+        onCheckedChange={(checked) => set(k, checked === true)}
       />
       {label}
     </label>

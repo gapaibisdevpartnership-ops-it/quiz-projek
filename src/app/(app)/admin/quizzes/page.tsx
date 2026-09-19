@@ -1,13 +1,25 @@
 import Link from "next/link";
 import { listQuizzes } from "@/features/quizzes/service";
 import { listCategories } from "@/features/questions/service";
-import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
-const STATUS_STYLES: Record<string, string> = {
-  draft: "text-muted-foreground",
-  published: "text-emerald-600",
-  archived: "text-muted-foreground line-through",
+const STATUS_VARIANT: Record<
+  string,
+  "default" | "secondary" | "outline"
+> = {
+  draft: "secondary",
+  published: "default",
+  archived: "outline",
 };
 
 export default async function QuizzesPage() {
@@ -20,48 +32,63 @@ export default async function QuizzesPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Quiz Management</h1>
-        <Link href="/admin/quizzes/new" className={buttonVariants()}>
-          + New quiz
-        </Link>
+        <div>
+          <h1 className="text-xl font-semibold">Quiz Management</h1>
+          <p className="text-muted-foreground text-sm">
+            {quizzes.length} quiz{quizzes.length === 1 ? "" : "zes"}
+          </p>
+        </div>
+        <Button asChild className="gap-1.5">
+          <Link href="/admin/quizzes/new">
+            <span aria-hidden="true">+</span> New quiz
+          </Link>
+        </Button>
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Quizzes ({quizzes.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           {quizzes.length === 0 ? (
-            <p className="text-muted-foreground text-sm">No quizzes yet.</p>
+            <p className="text-muted-foreground p-6 text-center text-sm">
+              No quizzes yet.
+            </p>
           ) : (
-            <ul className="divide-y">
-              {quizzes.map((q) => (
-                <li
-                  key={q.id}
-                  className="flex items-center justify-between gap-4 py-3"
-                >
-                  <div className="min-w-0">
-                    <Link
-                      href={`/admin/quizzes/${q.id}`}
-                      className="truncate text-sm font-medium hover:underline"
-                    >
-                      {q.title}
-                    </Link>
-                    <p className="text-muted-foreground text-xs">
-                      {q.categoryId ? catName.get(q.categoryId) ?? "—" : "No category"}
-                      {" · "}
-                      {q.passingScore}% to pass · {q.maxAttempts} attempt
-                      {q.maxAttempts === 1 ? "" : "s"}
-                    </p>
-                  </div>
-                  <span
-                    className={`text-xs font-medium ${STATUS_STYLES[q.status] ?? ""}`}
-                  >
-                    {q.status}
-                  </span>
-                </li>
-              ))}
-            </ul>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Quiz</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Passing score</TableHead>
+                  <TableHead>Attempts</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {quizzes.map((q) => (
+                  <TableRow key={q.id}>
+                    <TableCell>
+                      <Link
+                        href={`/admin/quizzes/${q.id}`}
+                        className="font-medium hover:underline"
+                      >
+                        {q.title}
+                      </Link>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {q.categoryId ? catName.get(q.categoryId) ?? "—" : "—"}
+                    </TableCell>
+                    <TableCell>{q.passingScore}%</TableCell>
+                    <TableCell>
+                      {q.maxAttempts} attempt{q.maxAttempts === 1 ? "" : "s"}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={STATUS_VARIANT[q.status] ?? "outline"}>
+                        {q.status}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           )}
         </CardContent>
       </Card>
