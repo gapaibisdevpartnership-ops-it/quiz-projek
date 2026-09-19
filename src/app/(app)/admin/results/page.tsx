@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { listAllAttempts } from "@/features/results/service";
-import { formatDateTimeUTC } from "@/lib/format";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { LocalTime } from "@/components/local-time";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -24,14 +24,18 @@ export default async function ResultsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold">Results</h1>
+      <div>
+        <h1 className="text-xl font-semibold">Results</h1>
+        <p className="text-muted-foreground text-sm">
+          {attempts.length} attempt{attempts.length === 1 ? "" : "s"}
+        </p>
+      </div>
       <Card>
-        <CardHeader>
-          <CardTitle>Attempts ({attempts.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           {attempts.length === 0 ? (
-            <p className="text-muted-foreground text-sm">No attempts yet.</p>
+            <p className="text-muted-foreground p-6 text-center text-sm">
+              No attempts yet.
+            </p>
           ) : (
             <Table>
               <TableHeader>
@@ -41,6 +45,7 @@ export default async function ResultsPage() {
                   <TableHead>#</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Score</TableHead>
+                  <TableHead>Result</TableHead>
                   <TableHead>Submitted</TableHead>
                 </TableRow>
               </TableHeader>
@@ -63,7 +68,9 @@ export default async function ResultsPage() {
                         </Badge>
                       ) : null}
                     </TableCell>
-                    <TableCell>{a.attemptNumber}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {a.attemptNumber}
+                    </TableCell>
                     <TableCell>
                       <Badge
                         variant={
@@ -75,17 +82,18 @@ export default async function ResultsPage() {
                     </TableCell>
                     <TableCell>
                       {a.percentage != null ? `${a.percentage}%` : "—"}
-                      {a.passed == null ? null : (
-                        <Badge
-                          variant={a.passed ? "default" : "destructive"}
-                          className="ml-1.5"
-                        >
+                    </TableCell>
+                    <TableCell>
+                      {a.passed == null ? (
+                        <span className="text-muted-foreground">—</span>
+                      ) : (
+                        <Badge variant={a.passed ? "default" : "destructive"}>
                           {a.passed ? "Passed" : "Failed"}
                         </Badge>
                       )}
                     </TableCell>
                     <TableCell className="text-muted-foreground text-xs">
-                      {formatDateTimeUTC(a.submittedAt)}
+                      <LocalTime iso={a.submittedAt} />
                     </TableCell>
                   </TableRow>
                 ))}

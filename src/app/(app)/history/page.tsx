@@ -3,7 +3,7 @@ import { requireProfile } from "@/features/auth/service";
 import { isAdminRole } from "@/lib/constants";
 import { listMyAttempts } from "@/features/attempts/service";
 import { createClient } from "@/lib/supabase/server";
-import { formatDateTimeUTC } from "@/lib/format";
+import { LocalTime } from "@/components/local-time";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -60,9 +60,11 @@ export default async function HistoryPage() {
                     </Link>
                     <p className="text-muted-foreground text-xs">
                       Attempt #{a.attemptNumber} ·{" "}
-                      {a.submittedAt
-                        ? formatDateTimeUTC(a.submittedAt)
-                        : "in progress"}
+                      {a.submittedAt ? (
+                        <LocalTime iso={a.submittedAt} />
+                      ) : (
+                        "in progress"
+                      )}
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-1.5">

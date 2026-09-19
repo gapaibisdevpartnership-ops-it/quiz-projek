@@ -14,7 +14,7 @@ import { listSessionsForQuiz } from "@/features/sessions/service";
 import { QuizStatusActions } from "@/features/quizzes/quiz-status-actions";
 import { QuizAssignments } from "@/features/assignments/quiz-assignments";
 import { SessionLinks } from "@/features/sessions/session-links";
-import { formatDateTimeUTC } from "@/lib/format";
+import { LocalTime } from "@/components/local-time";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -58,9 +58,13 @@ export default async function QuizOverviewPage({
     ["Duration", quiz.durationMinutes ? `${quiz.durationMinutes} min` : "Untimed"],
     [
       "Window",
-      quiz.startAt || quiz.endAt
-        ? `${formatDateTimeUTC(quiz.startAt)} → ${formatDateTimeUTC(quiz.endAt)}`
-        : "Always open",
+      quiz.startAt || quiz.endAt ? (
+        <>
+          <LocalTime iso={quiz.startAt} /> → <LocalTime iso={quiz.endAt} />
+        </>
+      ) : (
+        "Always open"
+      ),
     ],
   ];
 

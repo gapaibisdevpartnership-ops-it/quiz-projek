@@ -1,9 +1,17 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getUser } from "@/features/users/service";
 import { listTeams } from "@/features/teams/service";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatDateTimeUTC } from "@/lib/format";
+import { Badge } from "@/components/ui/badge";
+import { LocalTime } from "@/components/local-time";
+
+const ROLE_LABEL: Record<string, string> = {
+  super_admin: "Super Admin",
+  admin: "Trainer",
+  sales: "Sales",
+};
 
 export default async function UserDetailPage({
   params,
@@ -15,12 +23,22 @@ export default async function UserDetailPage({
   if (!user) notFound();
   const teams = await listTeams();
 
-  const rows: [string, string][] = [
+  const rows: [string, ReactNode][] = [
     ["Name", user.fullName || "—"],
     ["Email", user.email],
-    ["Role", user.role],
-    ["Status", user.status],
-    ["Joined", formatDateTimeUTC(user.createdAt)],
+    [
+      "Role",
+      <Badge key="role" variant="secondary">
+        {ROLE_LABEL[user.role] ?? user.role}
+      </Badge>,
+    ],
+    [
+      "Status",
+      <Badge key="status" variant={user.status === "active" ? "default" : "outline"}>
+        {user.status}
+      </Badge>,
+    ],
+    ["Joined", <LocalTime key="joined" iso={user.createdAt} />],
   ];
 
   return (

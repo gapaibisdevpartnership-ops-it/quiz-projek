@@ -15,17 +15,15 @@ export interface AttemptListRow {
   submittedAt: string | null;
 }
 
-export async function listAllAttempts(): Promise<AttemptListRow[]> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("quiz_attempts")
-    .select(
-      "id, quiz_id, user_id, attempt_number, status, percentage, passed, submitted_at",
-    )
-    .order("created_at", { ascending: false })
-    .limit(200);
-  if (error) throw error;
-  const rows = (data ?? []) as Record<string, unknown>[];
+const ATTEMPT_COLUMNS =
+  "id, quiz_id, user_id, attempt_number, status, percentage, passed, submitted_at";
+
+/** Joins quiz title + user name/guest flag onto raw attempt rows. Shared by
+ * every list query below so they don't each re-implement the two lookups. */
+async function hydrateAttempts(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  rows: Record<string, unknown>[],
+): Promise<AttemptListRow[]> {
   if (!rows.length) return [];
 
   const quizIds = [...new Set(rows.map((r) => r.quiz_id as string))];
@@ -57,6 +55,34 @@ export async function listAllAttempts(): Promise<AttemptListRow[]> {
     passed: (r.passed as boolean | null) ?? null,
     submittedAt: (r.submitted_at as string | null) ?? null,
   }));
+}
+
+export async function listAllAttempts(): Promise<AttemptListRow[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("quiz_attempts")
+    .select(ATTEMPT_COLUMNS)
+    .order("created_at", { ascending: false })
+    .limit(200);
+  if (error) throw error;
+  return hydrateAttempts(supabase, (data ?? []) as Record<string, unknown>[]);
+}
+
+/** Most recently finalized attempts, for the trainer dashboard's "who just
+ * submitted" glance widget — not the full results log (see
+ * `listAllAttempts`). */
+export async function listRecentAttempts(
+  limit = 6,
+): Promise<AttemptListRow[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("quiz_attempts")
+    .select(ATTEMPT_COLUMNS)
+    .neq("status", "in_progress")
+    .order("submitted_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return hydrateAttempts(supabase, (data ?? []) as Record<string, unknown>[]);
 }
 
 export interface BreakdownQuestion {

@@ -19,6 +19,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@/components/ui/select";
 import { Alert } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import {
   Card,
   CardContent,
@@ -242,11 +244,19 @@ export function QuestionEditor({ categories, scopeId, question }: Props) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">
-          {question ? "Edit question" : "New question"}
-        </h1>
-        <div className="flex gap-2">
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-semibold">
+            {question ? "Edit question" : "New question"}
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            {QUESTION_TYPE_LABELS[type]}
+            {isEssay
+              ? " — graded manually by a trainer."
+              : " — scored automatically."}
+          </p>
+        </div>
+        <div className="flex shrink-0 gap-2">
           <Button
             variant="outline"
             onClick={() => router.push("/admin/questions")}
@@ -254,19 +264,198 @@ export function QuestionEditor({ categories, scopeId, question }: Props) {
             Cancel
           </Button>
           <Button onClick={submit} disabled={pending}>
-            {pending ? "Saving…" : "Save question"}
+            {pending ? "Saving…" : question ? "Save changes" : "Create question"}
           </Button>
         </div>
       </div>
 
       {error ? <Alert variant="destructive">{error}</Alert> : null}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Details</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Question</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="qtext">Question text</Label>
+                <Textarea
+                  id="qtext"
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  placeholder="Provide question text or an image."
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Question image</Label>
+                <ImageField
+                  folder="questions"
+                  scopeId={scopeId}
+                  value={imageUrl}
+                  onChange={setImageUrl}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="expl">Explanation</Label>
+                <Textarea
+                  id="expl"
+                  value={explanation}
+                  onChange={(e) => setExplanation(e.target.value)}
+                  placeholder="Shown to the trainee after grading, alongside the correct answer."
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {isEssay ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Grading</CardTitle>
+                <p className="text-muted-foreground text-sm">
+                  Visible to trainers only — never shown to the trainee.
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="sample">Sample answer</Label>
+                  <Textarea
+                    id="sample"
+                    value={sampleAnswer}
+                    onChange={(e) => setSampleAnswer(e.target.value)}
+                    placeholder="What a strong answer looks like."
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="gnotes">Grading notes</Label>
+                  <Textarea
+                    id="gnotes"
+                    value={gradingNotes}
+                    onChange={(e) => setGradingNotes(e.target.value)}
+                    placeholder="What to look for, common mistakes to watch out for."
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="keywords">
+                    Keywords for grading hint (optional)
+                  </Label>
+                  <Input
+                    id="keywords"
+                    value={keywords}
+                    onChange={(e) => setKeywords(e.target.value)}
+                    placeholder="e.g. awareness, interest, decision"
+                  />
+                  <p className="text-muted-foreground text-xs">
+                    Comma-separated. Used only as a suggestion when grading —
+                    you always make the final call.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle>Answer options</CardTitle>
+                <p className="text-muted-foreground text-sm">
+                  {type === "multiple_choice"
+                    ? "Mark every correct answer."
+                    : "Mark the one correct answer."}
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {options.map((o, i) => (
+                  <div
+                    key={i}
+                    className={cn(
+                      "flex flex-wrap items-start gap-3 rounded-md border p-3 transition-colors",
+                      o.isCorrect && "border-primary bg-primary/5",
+                    )}
+                  >
+                    <label className="flex items-center gap-2 pt-2 text-sm">
+                      <input
+                        type={type === "multiple_choice" ? "checkbox" : "radio"}
+                        name="correct"
+                        aria-label={`Mark option ${i + 1} correct`}
+                        className="accent-primary size-4"
+                        checked={o.isCorrect}
+                        onChange={(e) => setCorrect(i, e.target.checked)}
+                      />
+                      {o.isCorrect ? (
+                        <Badge>Correct</Badge>
+                      ) : (
+                        <span className="text-muted-foreground text-xs">
+                          Correct?
+                        </span>
+                      )}
+                    </label>
+                    <div className="min-w-40 flex-1 space-y-2">
+                      <Input
+                        value={o.answerText}
+                        placeholder={`Option ${i + 1} text`}
+                        disabled={type === "true_false"}
+                        onChange={(e) =>
+                          setOptions((prev) =>
+                            prev.map((p, pi) =>
+                              pi === i
+                                ? { ...p, answerText: e.target.value }
+                                : p,
+                            ),
+                          )
+                        }
+                      />
+                      {type !== "true_false" ? (
+                        <ImageField
+                          folder="question-options"
+                          scopeId={scopeId}
+                          value={o.imageUrl}
+                          onChange={(url) =>
+                            setOptions((prev) =>
+                              prev.map((p, pi) =>
+                                pi === i ? { ...p, imageUrl: url } : p,
+                              ),
+                            )
+                          }
+                        />
+                      ) : null}
+                    </div>
+                    {type !== "true_false" && options.length > 2 ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          setOptions((prev) => prev.filter((_, pi) => pi !== i))
+                        }
+                      >
+                        Remove
+                      </Button>
+                    ) : null}
+                  </div>
+                ))}
+                {type !== "true_false" ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      setOptions((prev) => [...prev, emptyOption()])
+                    }
+                  >
+                    + Add option
+                  </Button>
+                ) : null}
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        <Card className="h-fit">
+          <CardHeader>
+            <CardTitle>Details</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label>Type</Label>
               <Select
@@ -280,6 +469,12 @@ export function QuestionEditor({ categories, scopeId, question }: Props) {
                   </option>
                 ))}
               </Select>
+              {question ? (
+                <p className="text-muted-foreground text-xs">
+                  Type can&apos;t change after creation — create a new
+                  question instead.
+                </p>
+              ) : null}
             </div>
             <div className="space-y-2">
               <Label>Category</Label>
@@ -307,164 +502,9 @@ export function QuestionEditor({ categories, scopeId, question }: Props) {
                 <option value="hard">Hard</option>
               </Select>
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="qtext">Question text</Label>
-            <Textarea
-              id="qtext"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="Provide question text or an image."
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Question image</Label>
-            <ImageField
-              folder="questions"
-              scopeId={scopeId}
-              value={imageUrl}
-              onChange={setImageUrl}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="expl">Explanation (shown after grading)</Label>
-            <Textarea
-              id="expl"
-              value={explanation}
-              onChange={(e) => setExplanation(e.target.value)}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {isEssay ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Grading (visible to trainers only)</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="sample">Sample answer</Label>
-              <Textarea
-                id="sample"
-                value={sampleAnswer}
-                onChange={(e) => setSampleAnswer(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="gnotes">Grading notes</Label>
-              <Textarea
-                id="gnotes"
-                value={gradingNotes}
-                onChange={(e) => setGradingNotes(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="keywords">
-                Keywords for grading hint (optional)
-              </Label>
-              <Input
-                id="keywords"
-                value={keywords}
-                onChange={(e) => setKeywords(e.target.value)}
-                placeholder="e.g. awareness, interest, decision"
-              />
-              <p className="text-muted-foreground text-xs">
-                Comma-separated. Used only as a suggestion when grading — you
-                always make the final call.
-              </p>
-            </div>
           </CardContent>
         </Card>
-      ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              Answer options
-              {type === "multiple_choice"
-                ? " — mark all correct answers"
-                : " — mark the one correct answer"}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {options.map((o, i) => (
-              <div
-                key={i}
-                className="flex flex-wrap items-start gap-3 rounded-md border p-3"
-              >
-                <label className="flex items-center gap-2 pt-2 text-sm">
-                  <input
-                    type={
-                      type === "multiple_choice" ? "checkbox" : "radio"
-                    }
-                    name="correct"
-                    checked={o.isCorrect}
-                    onChange={(e) => setCorrect(i, e.target.checked)}
-                  />
-                  Correct
-                </label>
-                <div className="flex-1 space-y-2">
-                  <Input
-                    value={o.answerText}
-                    placeholder={`Option ${i + 1} text`}
-                    disabled={type === "true_false"}
-                    onChange={(e) =>
-                      setOptions((prev) =>
-                        prev.map((p, pi) =>
-                          pi === i
-                            ? { ...p, answerText: e.target.value }
-                            : p,
-                        ),
-                      )
-                    }
-                  />
-                  {type !== "true_false" ? (
-                    <ImageField
-                      folder="question-options"
-                      scopeId={scopeId}
-                      value={o.imageUrl}
-                      onChange={(url) =>
-                        setOptions((prev) =>
-                          prev.map((p, pi) =>
-                            pi === i ? { ...p, imageUrl: url } : p,
-                          ),
-                        )
-                      }
-                    />
-                  ) : null}
-                </div>
-                {type !== "true_false" && options.length > 2 ? (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() =>
-                      setOptions((prev) => prev.filter((_, pi) => pi !== i))
-                    }
-                  >
-                    Remove
-                  </Button>
-                ) : null}
-              </div>
-            ))}
-            {type !== "true_false" ? (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  setOptions((prev) => [...prev, emptyOption()])
-                }
-              >
-                + Add option
-              </Button>
-            ) : null}
-          </CardContent>
-        </Card>
-      )}
+      </div>
     </div>
   );
 }

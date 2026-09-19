@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { listGradingQueue } from "@/features/grading/service";
-import { formatDateTimeUTC } from "@/lib/format";
+import { LocalTime } from "@/components/local-time";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 
@@ -35,7 +35,7 @@ export default async function GradingPage() {
                     </Link>
                     <p className="text-muted-foreground text-xs">
                       {item.userName} · submitted{" "}
-                      {formatDateTimeUTC(item.submittedAt)}
+                      <LocalTime iso={item.submittedAt} />
                     </p>
                   </div>
                   <div className="w-32 shrink-0 space-y-1">

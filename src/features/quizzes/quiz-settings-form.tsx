@@ -88,26 +88,38 @@ export function QuizSettingsForm({
     });
   }
 
-  const checkbox = (
+  const toggle = (
     k: "shuffleQuestions" | "shuffleAnswers" | "showResult" | "showCorrectAnswer",
     label: string,
+    hint: string,
   ) => (
-    <label className="flex items-center gap-2 text-sm">
+    <label className="flex items-start gap-3 text-sm">
       <Checkbox
+        className="mt-0.5"
         checked={f[k]}
         onCheckedChange={(checked) => set(k, checked === true)}
       />
-      {label}
+      <span>
+        <span className="font-medium">{label}</span>
+        <span className="text-muted-foreground block text-xs">{hint}</span>
+      </span>
     </label>
   );
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">
-          {quiz ? "Quiz settings" : "New quiz"}
-        </h1>
-        <div className="flex gap-2">
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-semibold">
+            {quiz ? "Quiz settings" : "New quiz"}
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            {quiz
+              ? "Update the content and rules for this quiz."
+              : "Set up the content and rules — you'll add questions next."}
+          </p>
+        </div>
+        <div className="flex shrink-0 gap-2">
           <Button
             variant="outline"
             onClick={() =>
@@ -117,27 +129,48 @@ export function QuizSettingsForm({
             Cancel
           </Button>
           <Button onClick={submit} disabled={pending}>
-            {pending ? "Saving…" : "Save"}
+            {pending ? "Saving…" : quiz ? "Save changes" : "Create quiz"}
           </Button>
         </div>
       </div>
 
       {error ? <Alert variant="destructive">{error}</Alert> : null}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Basics</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="title">Title</Label>
-            <Input
-              id="title"
-              value={f.title}
-              onChange={(e) => set("title", e.target.value)}
-            />
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <Card>
+          <CardHeader>
+            <CardTitle>Basics</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="title">
+                Title <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="title"
+                placeholder="e.g. Marketing Fundamentals"
+                value={f.title}
+                onChange={(e) => set("title", e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="desc">Description</Label>
+              <Textarea
+                id="desc"
+                placeholder="A one- or two-sentence summary shown on the quiz list."
+                value={f.description}
+                onChange={(e) => set("description", e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="instr">Instructions</Label>
+              <Textarea
+                id="instr"
+                placeholder="Shown to the trainee before they start — e.g. what to expect, how it's graded."
+                value={f.instructions}
+                onChange={(e) => set("instructions", e.target.value)}
+              />
+            </div>
             <div className="space-y-2">
               <Label>Category</Label>
               <Select
@@ -152,102 +185,108 @@ export function QuizSettingsForm({
                 ))}
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="duration">Duration (minutes, optional)</Label>
-              <Input
-                id="duration"
-                type="number"
-                min={1}
-                value={f.durationMinutes}
-                onChange={(e) => set("durationMinutes", e.target.value)}
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="desc">Description</Label>
-            <Textarea
-              id="desc"
-              value={f.description}
-              onChange={(e) => set("description", e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="instr">Instructions</Label>
-            <Textarea
-              id="instr"
-              value={f.instructions}
-              onChange={(e) => set("instructions", e.target.value)}
-            />
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Scoring &amp; attempts</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="pass">Passing score (%)</Label>
-            <Input
-              id="pass"
-              type="number"
-              min={0}
-              max={100}
-              value={f.passingScore}
-              onChange={(e) => set("passingScore", e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="max">Max attempts</Label>
-            <Input
-              id="max"
-              type="number"
-              min={1}
-              value={f.maxAttempts}
-              onChange={(e) => set("maxAttempts", e.target.value)}
-            />
-          </div>
-        </CardContent>
-      </Card>
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Scoring &amp; attempts</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-4 grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="pass">Passing score (%)</Label>
+                <Input
+                  id="pass"
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={f.passingScore}
+                  onChange={(e) => set("passingScore", e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="max">Max attempts</Label>
+                <Input
+                  id="max"
+                  type="number"
+                  min={1}
+                  value={f.maxAttempts}
+                  onChange={(e) => set("maxAttempts", e.target.value)}
+                />
+              </div>
+              <div className="col-span-2 space-y-2">
+                <Label htmlFor="duration">Duration (minutes)</Label>
+                <Input
+                  id="duration"
+                  type="number"
+                  min={1}
+                  placeholder="Untimed"
+                  value={f.durationMinutes}
+                  onChange={(e) => set("durationMinutes", e.target.value)}
+                />
+              </div>
+            </CardContent>
+          </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Behaviour</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {checkbox("shuffleQuestions", "Shuffle question order")}
-          {checkbox("shuffleAnswers", "Shuffle answer options")}
-          {checkbox("showResult", "Show result to the sales user")}
-          {checkbox("showCorrectAnswer", "Reveal correct answers on the result")}
-        </CardContent>
-      </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Behaviour</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {toggle(
+                "shuffleQuestions",
+                "Shuffle question order",
+                "Each attempt gets a different question order.",
+              )}
+              {toggle(
+                "shuffleAnswers",
+                "Shuffle answer options",
+                "Answer choices are reordered per attempt.",
+              )}
+              {toggle(
+                "showResult",
+                "Show result to the sales user",
+                "They see their score right after submitting.",
+              )}
+              {toggle(
+                "showCorrectAnswer",
+                "Reveal correct answers",
+                "Shown alongside their own answers on the result.",
+              )}
+            </CardContent>
+          </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Availability window (optional)</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="start">Opens</Label>
-            <Input
-              id="start"
-              type="datetime-local"
-              value={f.startAt}
-              onChange={(e) => set("startAt", e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="end">Closes</Label>
-            <Input
-              id="end"
-              type="datetime-local"
-              value={f.endAt}
-              onChange={(e) => set("endAt", e.target.value)}
-            />
-          </div>
-        </CardContent>
-      </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Availability window</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="start">Opens</Label>
+                <Input
+                  id="start"
+                  type="datetime-local"
+                  value={f.startAt}
+                  onChange={(e) => set("startAt", e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="end">Closes</Label>
+                <Input
+                  id="end"
+                  type="datetime-local"
+                  value={f.endAt}
+                  onChange={(e) => set("endAt", e.target.value)}
+                />
+              </div>
+              <p className="text-muted-foreground text-xs">
+                Leave both blank to keep the quiz open indefinitely.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }

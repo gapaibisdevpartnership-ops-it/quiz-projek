@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { formatDateTimeUTC } from "@/lib/format";
+import { LocalTime } from "@/components/local-time";
 
 const STATUS_LABEL: Record<string, string> = {
   submitted: "Submitted",
@@ -70,10 +70,14 @@ export default async function QuizDetailPage({
             </li>
             <li>Attempts allowed: {quiz.maxAttempts}</li>
             {quiz.startAt ? (
-              <li>Opens: {formatDateTimeUTC(quiz.startAt)}</li>
+              <li>
+                Opens: <LocalTime iso={quiz.startAt} />
+              </li>
             ) : null}
             {quiz.endAt ? (
-              <li>Closes: {formatDateTimeUTC(quiz.endAt)}</li>
+              <li>
+                Closes: <LocalTime iso={quiz.endAt} />
+              </li>
             ) : null}
           </ul>
         </CardContent>

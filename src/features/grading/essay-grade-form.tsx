@@ -3,10 +3,12 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { Check, X } from "lucide-react";
 import { gradeEssay } from "@/features/grading/actions";
 import { matchKeywords } from "@/features/grading/keyword-match";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -45,7 +47,7 @@ export function EssayGradeForm({
   const [score, setScore] = useState(currentScore?.toString() ?? "");
   const [feedback, setFeedback] = useState(currentFeedback ?? "");
   const [error, setError] = useState<string | null>(null);
-  const [saved, setSaved] = useState(currentScore != null);
+  const [savedScore, setSavedScore] = useState(currentScore);
 
   const suggestion = matchKeywords(keywords ?? null, answerText ?? null);
 
@@ -59,7 +61,7 @@ export function EssayGradeForm({
     start(async () => {
       const res = await gradeEssay(answerId, n, feedback, attemptId);
       if (!res.ok) return setError(res.error);
-      setSaved(true);
+      setSavedScore(n);
       toast.success(`Graded ${n}/${maxPoints}`);
       router.refresh();
     });
@@ -76,7 +78,18 @@ export function EssayGradeForm({
   }
 
   return (
-    <div className="space-y-2 rounded-md border bg-muted/30 p-3">
+    <div className="space-y-3 rounded-lg border bg-muted/30 p-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm font-medium">Grade this answer</p>
+        {savedScore != null ? (
+          <Badge>
+            Graded · {savedScore}/{maxPoints}
+          </Badge>
+        ) : (
+          <Badge variant="outline">Not graded</Badge>
+        )}
+      </div>
+
       {suggestion ? (
         <Badge variant={BADGE_VARIANT[suggestion.label]}>
           {BADGE_LABELS[suggestion.label]} ({suggestion.matched}/
@@ -84,42 +97,56 @@ export function EssayGradeForm({
         </Badge>
       ) : null}
       {error ? <Alert variant="destructive">{error}</Alert> : null}
+
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="gap-1.5"
+          disabled={pending}
+          onClick={markCorrect}
+        >
+          <Check className="size-3.5" aria-hidden="true" />
+          Full marks
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="gap-1.5"
+          disabled={pending}
+          onClick={markWrong}
+        >
+          <X className="size-3.5" aria-hidden="true" />
+          No marks
+        </Button>
+        <span className="text-muted-foreground text-xs">
+          or enter a custom score
+        </span>
+      </div>
+
       <div className="flex flex-wrap items-end gap-2">
-        <label className="text-xs">
-          Score (0–{maxPoints})
+        <div className="space-y-1">
+          <Label htmlFor={`score-${answerId}`} className="text-xs">
+            Score (0–{maxPoints})
+          </Label>
           <Input
+            id={`score-${answerId}`}
             type="number"
             min={0}
             max={maxPoints}
             step="0.5"
             value={score}
-            className="mt-1 h-9 w-24"
+            className="h-9 w-24"
             onChange={(e) => setScore(e.target.value)}
           />
-        </label>
+        </div>
         <Button size="sm" disabled={pending} onClick={() => submit()}>
-          {pending ? "Saving…" : saved ? "Update grade" : "Save grade"}
+          {pending ? "Saving…" : savedScore != null ? "Update grade" : "Save grade"}
         </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          disabled={pending}
-          onClick={markCorrect}
-        >
-          Mark Correct
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          disabled={pending}
-          onClick={markWrong}
-        >
-          Mark Wrong
-        </Button>
-        {saved ? <Badge variant="default">Graded</Badge> : null}
       </div>
+
       <Textarea
         placeholder="Feedback for the trainee (optional)"
         value={feedback}

@@ -5,7 +5,7 @@ import { listMyAssignedQuizzes } from "@/features/assignments/service";
 import { listQuizzes } from "@/features/quizzes/service";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { formatDateTimeUTC } from "@/lib/format";
+import { LocalTime } from "@/components/local-time";
 
 export default async function QuizzesPage() {
   const profile = await requireProfile();
@@ -49,7 +49,9 @@ export default async function QuizzesPage() {
                   </li>
                   <li>Attempts allowed: {q.maxAttempts}</li>
                   {q.endAt ? (
-                    <li>Closes: {formatDateTimeUTC(q.endAt)}</li>
+                    <li>
+                      Closes: <LocalTime iso={q.endAt} />
+                    </li>
                   ) : null}
                 </ul>
                 <Button size="sm" asChild>

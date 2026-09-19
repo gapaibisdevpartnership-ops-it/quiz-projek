@@ -35,11 +35,17 @@ export default async function AnalyticsPage() {
     <div className="space-y-6">
       <h1 className="text-xl font-semibold">Analytics</h1>
 
-      <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <StatCard label="Active sales" value={kpis.totalSales} />
         <StatCard label="Published quizzes" value={kpis.activeQuizzes} />
         <StatCard label="Completed attempts" value={kpis.completedAttempts} />
-        <StatCard label="Pending reviews" value={kpis.pendingReviews} />
+        <StatCard
+          label="Pending reviews"
+          value={kpis.pendingReviews}
+          href="/admin/grading"
+          emphasize={kpis.pendingReviews > 0}
+          hint={kpis.pendingReviews > 0 ? "Needs grading" : undefined}
+        />
         <StatCard label="Average score" value={pct(kpis.averageScore)} />
         <StatCard label="Pass rate" value={pct(kpis.passRate)} />
       </div>

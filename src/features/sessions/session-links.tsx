@@ -17,7 +17,7 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { formatDateTimeUTC } from "@/lib/format";
+import { LocalTime } from "@/components/local-time";
 
 const EXPIRY_OPTIONS = [
   { value: "", label: "No expiry" },
@@ -239,9 +239,19 @@ export function SessionLinks({
                 ) : null}
               </div>
               <p className="text-muted-foreground text-xs">
-                Created {formatDateTimeUTC(s.createdAt)}
-                {s.startsAt ? ` · opens ${formatDateTimeUTC(s.startsAt)}` : ""}
-                {s.expiresAt ? ` · expires ${formatDateTimeUTC(s.expiresAt)}` : ""}
+                Created <LocalTime iso={s.createdAt} />
+                {s.startsAt ? (
+                  <>
+                    {" "}
+                    · opens <LocalTime iso={s.startsAt} />
+                  </>
+                ) : null}
+                {s.expiresAt ? (
+                  <>
+                    {" "}
+                    · expires <LocalTime iso={s.expiresAt} />
+                  </>
+                ) : null}
               </p>
               <p className="text-muted-foreground text-xs">
                 {s.candidatesUsed}

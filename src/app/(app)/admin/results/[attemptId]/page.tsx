@@ -1,12 +1,19 @@
-import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CheckSquare2, ChevronLeft, Square } from "lucide-react";
 import { getAttemptDetail } from "@/features/results/service";
 import { EssayGradeForm } from "@/features/grading/essay-grade-form";
 import { scoreLabel } from "@/lib/scoring";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+
+const STATUS_LABEL: Record<string, string> = {
+  in_progress: "In progress",
+  pending_review: "Pending review",
+  submitted: "Submitted",
+  expired: "Expired",
+};
 
 export default async function AttemptDetailPage({
   params,
@@ -17,65 +24,107 @@ export default async function AttemptDetailPage({
   const d = await getAttemptDetail(attemptId);
   if (!d) notFound();
 
+  const hasResult = d.passed != null;
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <Link
+        href="/admin/results"
+        className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm"
+      >
+        <ChevronLeft className="size-4" aria-hidden="true" />
+        All results
+      </Link>
+
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-xl font-semibold">{d.quizTitle}</h1>
           <p className="text-muted-foreground text-sm">
             {d.userName}
-            {d.isGuest ? " (via session link)" : ""} · attempt #
-            {d.attemptNumber} · {d.status.replace("_", " ")}
+            {d.isGuest ? (
+              <Badge variant="secondary" className="ml-1.5 align-middle">
+                via session link
+              </Badge>
+            ) : null}
           </p>
         </div>
-        <Link className="text-sm underline" href="/admin/results">
-          All results
-        </Link>
+        <div className="flex gap-1.5">
+          <Badge variant="outline">Attempt #{d.attemptNumber}</Badge>
+          <Badge variant={d.status === "submitted" ? "default" : "outline"}>
+            {STATUS_LABEL[d.status] ?? d.status}
+          </Badge>
+        </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Score</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <dl className="grid gap-x-8 gap-y-1 text-sm sm:grid-cols-2">
-            {(
-              [
-                ["Objective", scoreLabel(d.autoScore, d.totalPoints)],
-                ["Manual (essays)", d.manualScore != null ? String(d.manualScore) : "—"],
-                ["Final", scoreLabel(d.finalScore, d.totalPoints)],
-                ["Percentage", d.percentage != null ? `${d.percentage}%` : "—"],
-                [
-                  "Result",
-                  d.passed == null ? (
-                    "—"
-                  ) : (
-                    <Badge variant={d.passed ? "default" : "destructive"}>
-                      {d.passed ? "Passed" : "Not passed"}
-                    </Badge>
-                  ),
-                ],
-              ] as [string, ReactNode][]
-            ).map(([k, v]) => (
-              <div key={k} className="flex justify-between border-b py-1">
-                <dt className="text-muted-foreground">{k}</dt>
-                <dd className="font-medium">{v}</dd>
-              </div>
-            ))}
+      {hasResult ? (
+        <div
+          className={cn(
+            "flex flex-wrap items-center justify-between gap-4 rounded-xl border p-6",
+            d.passed
+              ? "border-primary/30 bg-primary/5"
+              : "border-destructive/30 bg-destructive/5",
+          )}
+        >
+          <div>
+            <p
+              className={cn(
+                "text-4xl font-semibold tabular-nums",
+                d.passed ? "text-primary" : "text-destructive",
+              )}
+            >
+              {d.percentage != null ? `${d.percentage}%` : "—"}
+            </p>
+            <p
+              className={cn(
+                "mt-1 text-sm font-medium",
+                d.passed ? "text-primary" : "text-destructive",
+              )}
+            >
+              {d.passed ? "Passed" : "Not passed"}
+            </p>
+          </div>
+          <dl className="flex gap-6 text-sm">
+            <div>
+              <dt className="text-muted-foreground">Objective</dt>
+              <dd className="font-medium tabular-nums">
+                {scoreLabel(d.autoScore, d.totalPoints)}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">Manual (essays)</dt>
+              <dd className="font-medium tabular-nums">
+                {d.manualScore != null ? d.manualScore : "—"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">Final</dt>
+              <dd className="font-medium tabular-nums">
+                {scoreLabel(d.finalScore, d.totalPoints)}
+              </dd>
+            </div>
           </dl>
-        </CardContent>
-      </Card>
+        </div>
+      ) : (
+        <Card>
+          <CardContent className="text-muted-foreground py-6 text-center text-sm">
+            {d.status === "pending_review"
+              ? "Awaiting essay grading before a final score can be shown."
+              : "This attempt has no score yet."}
+          </CardContent>
+        </Card>
+      )}
 
       <div className="space-y-4">
         {d.questions.map((q, i) => (
           <Card key={q.attemptQuestionId}>
             <CardHeader>
-              <CardTitle className="text-base">
-                {i + 1}. {q.text || "(image-only)"}{" "}
-                <span className="text-muted-foreground text-xs font-normal">
-                  · {q.type.replace("_", " ")} · {q.points} pt
-                </span>
+              <CardTitle className="text-base font-medium">
+                <span className="text-muted-foreground">{i + 1}.</span>{" "}
+                {q.text || "(image-only)"}
               </CardTitle>
+              <p className="text-muted-foreground text-xs">
+                {q.type.replace("_", " ")} · {q.points} pt
+              </p>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               {q.type === "essay" ? (
@@ -120,25 +169,32 @@ export default async function AttemptDetailPage({
                 </>
               ) : (
                 <>
-                  <ul className="space-y-1">
+                  <ul className="space-y-1.5">
                     {q.options.map((o) => (
                       <li
                         key={o.id}
                         className={cn(
-                          "flex items-center gap-2 rounded border p-2",
-                          o.isCorrect && "border-emerald-500/60 bg-emerald-500/5",
-                          o.selected && !o.isCorrect &&
-                            "border-destructive/60 bg-destructive/5",
+                          "flex items-center gap-2 rounded-md border p-2",
+                          o.isCorrect && "border-primary bg-primary/5",
+                          o.selected &&
+                            !o.isCorrect &&
+                            "border-destructive bg-destructive/5",
                         )}
                       >
-                        <span className="text-xs">
-                          {o.selected ? "☑" : "☐"}
-                        </span>
+                        {o.selected ? (
+                          <CheckSquare2
+                            className="text-foreground size-4 shrink-0"
+                            aria-hidden="true"
+                          />
+                        ) : (
+                          <Square
+                            className="text-muted-foreground size-4 shrink-0"
+                            aria-hidden="true"
+                          />
+                        )}
                         <span>{o.text || "(image)"}</span>
                         {o.isCorrect ? (
-                          <span className="ml-auto text-xs text-emerald-600">
-                            correct
-                          </span>
+                          <Badge className="ml-auto">Correct</Badge>
                         ) : null}
                       </li>
                     ))}
