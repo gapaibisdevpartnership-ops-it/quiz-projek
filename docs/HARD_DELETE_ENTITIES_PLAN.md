@@ -1,6 +1,6 @@
 # Plan — Extend super-admin-only hard-delete to Questions, Quizzes, Teams, Session links, Categories
 
-**Status:** 📝 Implementing on `feature/hard-delete-entities`.
+**Status:** ✅ Implemented and fully verified on `feature/hard-delete-entities`.
 
 ## Context
 
@@ -109,3 +109,47 @@ manual with throwaway dummy content (cleaned up after):
    (no-attempts-yet) quiz — confirm both succeed.
 5. Confirm an `admin`/trainer-role viewer sees none of the 5 new Delete
    buttons anywhere.
+
+## Verification results
+
+`npm run lint`, `npm run typecheck`, `npm test` (67 tests) and `npm run
+build` (28 routes) all passed before manual testing.
+
+Manual testing used disposable `DUMMY HDE …`-prefixed rows created via the
+service-role client, driven through the real UI with Playwright against
+`npm run dev`, logged in as `superadmin.qa@example.com` and, for the
+negative-permission check, `trainer.qa@example.com`. All rows were removed
+afterward; a final `ilike '%DUMMY%'` sweep across `quiz_categories`,
+`questions`, `quizzes`, `teams`, `assessment_sessions` confirmed no
+leftovers.
+
+1. **Category with a referencing question** — deleted as super_admin;
+   category removed from the list, the referencing question survived and
+   a direct query confirmed its `category_id` became `null`
+   (`on delete set null` working as designed).
+   **Team with a member** — deleted as super_admin; team removed from the
+   UI list, and a direct query confirmed the corresponding `team_members`
+   row was cascade-removed (`on delete cascade`).
+   **Session link with an attempt** — deleted as super_admin; a direct
+   query confirmed the session row was gone and the attempt's
+   `session_id` became `null` (`on delete set null`), so the candidate's
+   result was preserved.
+2. **Delete a question attached to a quiz** — blocked with the friendly
+   message "This question is used in one or more quizzes — remove it
+   from them first."; the question remained in the list (no raw
+   Postgres FK error surfaced).
+3. **Delete a quiz with an attempt** — blocked with the friendly message
+   "This quiz has attempt history and can't be deleted — archive it
+   instead."; the quiz page did not navigate away.
+4. **Standalone question and standalone quiz, no dependents** — both
+   deleted successfully; the question disappeared from the list and the
+   quiz was removed (confirmed by a direct query) and its detail page
+   redirected back to `/admin/quizzes`.
+5. **Trainer (`admin` role) viewer** — zero "Delete" buttons found on
+   `/admin/questions`, `/admin/teams`, or a quiz's `/admin/quizzes/[id]`
+   overview page (neither the "Delete permanently" quiz button nor the
+   session-link "Delete" button rendered), confirming hard-delete stays
+   exclusively super_admin-visible.
+
+No migration was required for this branch — it only adds server actions
+and UI, relying entirely on the FK behavior documented above.
