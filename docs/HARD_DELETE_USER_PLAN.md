@@ -1,6 +1,43 @@
 # Plan — Super-admin-only permanent user deletion
 
-**Status:** 📝 Implementing on `feature/hard-delete-user`.
+**Status:** ✅ Implemented, migration applied to production, verified
+end-to-end with disposable dummy accounts (cleaned up after) on
+`feature/hard-delete-user`. Not yet merged to `main`.
+
+## Verification results (2026-09-21)
+
+Applied `20260921090000_hard_delete_user_prep.sql` to production (manual
+`pg_dump` backup first). All 5 FK constraint names guessed from Postgres's
+default naming convention were correct — applied cleanly on the first try.
+
+All 4 planned checks verified live via Playwright against disposable dummy
+accounts (never a real seed/QA account), cleaned up after:
+1. **Sales account with an attempt**: hard-deleted as super_admin via the
+   real UI (typed-email confirm flow) — profile, auth user, and the
+   attempt all confirmed gone at the DB level; account can no longer sign
+   in.
+2. **Admin/trainer account that authored a question, created a quiz,
+   assigned it, graded an essay, and generated a session link**:
+   hard-deleted — **all 5 pieces of content survive** with attribution set
+   to `null` (question, quiz, assignment, the graded essay answer with its
+   `manual_score` intact, and the session link still `status: active`).
+   Went further than the plan asked: opened the surviving session link's
+   entry page live after the trainer was gone — it still works, zero
+   errors, confirming the fix isn't just a surviving DB row but a
+   genuinely still-usable link.
+3. **Self-delete**: the Delete button is simply absent from the viewer's
+   own row (UI-level), confirming that protection.
+   **Last-active-super-admin**: on inspection this check is structurally
+   unreachable independently of self-delete — since only a super_admin can
+   call this action at all, the only caller who could ever hit "target is
+   the last active super admin" is that same target (self-delete already
+   blocks it first). Not a bug; the exact same relationship already exists
+   in the shipped `admin_update_user` RPC. Kept as defense in depth,
+   consistent with that existing pattern.
+4. **Admin/trainer viewer**: confirmed zero "Delete permanently" buttons
+   rendered anywhere on `/admin/users`, not even disabled ones.
+
+`npm run lint/typecheck/test/build` all green throughout.
 
 ## Context
 
