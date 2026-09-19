@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { requireAdmin } from "@/features/auth/service";
+import { requireAdmin, requireSuperAdmin } from "@/features/auth/service";
 import { getQuestion } from "@/features/questions/service";
 import {
   categorySchema,
@@ -18,6 +18,8 @@ const MAX_QUESTION_TEXT = 4000;
 export type MutationResult =
   | { ok: true; id: string }
   | { ok: false; error: string };
+
+export type DeleteResult = { ok: true } | { ok: false; error: string };
 
 function firstError(issues: { message: string }[]): string {
   return issues[0]?.message ?? "Invalid input.";
@@ -69,6 +71,23 @@ export async function updateCategory(
   if (error) return { ok: false, error: error.message };
   revalidatePath("/admin/questions");
   return { ok: true, id };
+}
+
+/**
+ * Permanently delete a category — super_admin only
+ * (docs/HARD_DELETE_ENTITIES_PLAN.md). Safe unconditionally: both
+ * `questions.category_id` and `quizzes.category_id` are `on delete set
+ * null`, so any question/quiz using this category just loses the tag.
+ */
+export async function deleteCategoryPermanently(
+  id: string,
+): Promise<DeleteResult> {
+  await requireSuperAdmin();
+  const supabase = await createClient();
+  const { error } = await supabase.from("quiz_categories").delete().eq("id", id);
+  if (error) return { ok: false, error: error.message };
+  revalidatePath("/admin/questions");
+  return { ok: true };
 }
 
 // Questions --------------------------------------------------------
@@ -259,4 +278,31 @@ export async function setQuestionStatus(
   if (error) return { ok: false, error: error.message };
   revalidatePath("/admin/questions");
   return { ok: true, id };
+}
+
+/**
+ * Permanently delete a question — super_admin only
+ * (docs/HARD_DELETE_ENTITIES_PLAN.md). `quiz_questions.question_id` is
+ * `on delete restrict`, so Postgres blocks this while the question is
+ * attached to any quiz (23503) — caught below with a friendly message.
+ * Historical attempts are unaffected either way: they snapshot question
+ * text/options independently, with no FK back to this table.
+ */
+export async function deleteQuestionPermanently(
+  id: string,
+): Promise<DeleteResult> {
+  await requireSuperAdmin();
+  const supabase = await createClient();
+  const { error } = await supabase.from("questions").delete().eq("id", id);
+  if (error) {
+    if (error.code === "23503") {
+      return {
+        ok: false,
+        error: "This question is used in one or more quizzes — remove it from them first.",
+      };
+    }
+    return { ok: false, error: error.message };
+  }
+  revalidatePath("/admin/questions");
+  return { ok: true };
 }

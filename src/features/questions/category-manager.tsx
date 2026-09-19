@@ -3,12 +3,22 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { Category } from "@/types/domain";
-import { createCategory, updateCategory } from "@/features/questions/actions";
+import {
+  createCategory,
+  deleteCategoryPermanently,
+  updateCategory,
+} from "@/features/questions/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert } from "@/components/ui/alert";
 
-export function CategoryManager({ categories }: { categories: Category[] }) {
+export function CategoryManager({
+  categories,
+  viewerIsSuperAdmin,
+}: {
+  categories: Category[];
+  viewerIsSuperAdmin: boolean;
+}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [name, setName] = useState("");
@@ -36,6 +46,16 @@ export function CategoryManager({ categories }: { categories: Category[] }) {
     });
   }
 
+  function remove(c: Category) {
+    if (!window.confirm(`Delete "${c.name}" permanently? This cannot be undone.`))
+      return;
+    startTransition(async () => {
+      const res = await deleteCategoryPermanently(c.id);
+      if (!res.ok) setError(res.error);
+      else router.refresh();
+    });
+  }
+
   return (
     <div className="space-y-3">
       {error ? <Alert variant="destructive">{error}</Alert> : null}
@@ -58,14 +78,27 @@ export function CategoryManager({ categories }: { categories: Category[] }) {
             <span className={c.isActive ? "" : "text-muted-foreground line-through"}>
               {c.name}
             </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled={pending}
-              onClick={() => toggle(c)}
-            >
-              {c.isActive ? "Deactivate" : "Activate"}
-            </Button>
+            <div className="flex gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={pending}
+                onClick={() => toggle(c)}
+              >
+                {c.isActive ? "Deactivate" : "Activate"}
+              </Button>
+              {viewerIsSuperAdmin ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-destructive hover:text-destructive"
+                  disabled={pending}
+                  onClick={() => remove(c)}
+                >
+                  Delete
+                </Button>
+              ) : null}
+            </div>
           </li>
         ))}
       </ul>

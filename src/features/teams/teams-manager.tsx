@@ -7,6 +7,7 @@ import type { TeamWithCount, TeamMemberProfile } from "@/features/teams/service"
 import {
   addTeamMember,
   createTeam,
+  deleteTeamPermanently,
   removeTeamMember,
   updateTeam,
 } from "@/features/teams/actions";
@@ -24,9 +25,11 @@ interface TeamBundle {
 export function TeamsManager({
   teams,
   allUsers,
+  viewerIsSuperAdmin,
 }: {
   teams: TeamBundle[];
   allUsers: Profile[];
+  viewerIsSuperAdmin: boolean;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -118,6 +121,25 @@ export function TeamsManager({
                   >
                     {team.isActive ? "Deactivate" : "Activate"}
                   </Button>
+                  {viewerIsSuperAdmin ? (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-destructive hover:text-destructive"
+                      disabled={pending}
+                      onClick={() => {
+                        if (
+                          !window.confirm(
+                            `Delete "${team.name}" permanently? This cannot be undone.`,
+                          )
+                        )
+                          return;
+                        run(() => deleteTeamPermanently(team.id));
+                      }}
+                    >
+                      Delete
+                    </Button>
+                  ) : null}
                 </div>
 
                 {isOpen ? (

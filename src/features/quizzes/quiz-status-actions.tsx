@@ -3,16 +3,20 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { QuizStatus } from "@/lib/constants";
-import { setQuizStatus } from "@/features/quizzes/actions";
+import { deleteQuizPermanently, setQuizStatus } from "@/features/quizzes/actions";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
 
 export function QuizStatusActions({
   quizId,
+  quizTitle,
   status,
+  viewerIsSuperAdmin,
 }: {
   quizId: string;
+  quizTitle: string;
   status: QuizStatus;
+  viewerIsSuperAdmin: boolean;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -25,6 +29,20 @@ export function QuizStatusActions({
       if (!res.ok) setError(res.error);
       else router.refresh();
     });
+
+  function handleDelete() {
+    if (
+      !window.confirm(`Delete "${quizTitle}" permanently? This cannot be undone.`)
+    )
+      return;
+    setError(null);
+    start(async () => {
+      const res = await deleteQuizPermanently(quizId);
+      if (!res.ok) return setError(res.error);
+      router.push("/admin/quizzes");
+      router.refresh();
+    });
+  }
 
   return (
     <div className="space-y-2">
@@ -60,6 +78,15 @@ export function QuizStatusActions({
             Restore to draft
           </Button>
         )}
+        {viewerIsSuperAdmin ? (
+          <Button
+            variant="destructive"
+            disabled={pending}
+            onClick={handleDelete}
+          >
+            Delete permanently
+          </Button>
+        ) : null}
       </div>
       {error ? <Alert variant="destructive">{error}</Alert> : null}
     </div>

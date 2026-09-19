@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
+import { requireProfile } from "@/features/auth/service";
 import { listCategories, listQuestions } from "@/features/questions/service";
 import { QUESTION_TYPE_LABELS } from "@/lib/validation/question";
 import { CategoryManager } from "@/features/questions/category-manager";
@@ -13,10 +14,12 @@ import {
 } from "@/components/ui/card";
 
 export default async function QuestionBankPage() {
-  const [questions, categories] = await Promise.all([
+  const [profile, questions, categories] = await Promise.all([
+    requireProfile(),
     listQuestions({ status: "active" }),
     listCategories(),
   ]);
+  const viewerIsSuperAdmin = profile.role === "super_admin";
   const categoryName = new Map(categories.map((c) => [c.id, c.name]));
 
   return (
@@ -61,7 +64,11 @@ export default async function QuestionBankPage() {
                         {q.difficulty ? ` · ${q.difficulty}` : ""}
                       </p>
                     </div>
-                    <QuestionRowActions questionId={q.id} />
+                    <QuestionRowActions
+                      questionId={q.id}
+                      questionText={q.questionText}
+                      viewerIsSuperAdmin={viewerIsSuperAdmin}
+                    />
                   </li>
                 ))}
               </ul>
@@ -74,7 +81,10 @@ export default async function QuestionBankPage() {
             <CardTitle>Categories</CardTitle>
           </CardHeader>
           <CardContent>
-            <CategoryManager categories={categories} />
+            <CategoryManager
+              categories={categories}
+              viewerIsSuperAdmin={viewerIsSuperAdmin}
+            />
           </CardContent>
         </Card>
       </div>

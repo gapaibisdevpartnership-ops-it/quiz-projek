@@ -3,7 +3,12 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { AssessmentSession } from "@/features/sessions/service";
-import { closeSession, createSession, reopenSession } from "@/features/sessions/actions";
+import {
+  closeSession,
+  createSession,
+  deleteSessionPermanently,
+  reopenSession,
+} from "@/features/sessions/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,9 +35,11 @@ const OPENS_OPTIONS = [
 export function SessionLinks({
   quizId,
   sessions,
+  viewerIsSuperAdmin,
 }: {
   quizId: string;
   sessions: AssessmentSession[];
+  viewerIsSuperAdmin: boolean;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -80,6 +87,21 @@ export function SessionLinks({
         session.status === "active"
           ? await closeSession(quizId, session.id)
           : await reopenSession(quizId, session.id);
+      if (!res.ok) return setError(res.error);
+      router.refresh();
+    });
+  }
+
+  function remove(session: AssessmentSession) {
+    if (
+      !window.confirm(
+        `Delete "${session.label || "this link"}" permanently? This cannot be undone. The candidates who used it keep their results.`,
+      )
+    )
+      return;
+    setError(null);
+    start(async () => {
+      const res = await deleteSessionPermanently(quizId, session.id);
       if (!res.ok) return setError(res.error);
       router.refresh();
     });
@@ -244,6 +266,17 @@ export function SessionLinks({
                 >
                   {s.status === "active" ? "Close" : "Reopen"}
                 </Button>
+                {viewerIsSuperAdmin ? (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-destructive hover:text-destructive"
+                    disabled={pending}
+                    onClick={() => remove(s)}
+                  >
+                    Delete
+                  </Button>
+                ) : null}
               </div>
             </li>
           ))}

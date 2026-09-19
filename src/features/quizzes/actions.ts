@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { requireAdmin } from "@/features/auth/service";
+import { requireAdmin, requireSuperAdmin } from "@/features/auth/service";
 import {
   quizQuestionPointsSchema,
   quizSettingsSchema,
@@ -104,6 +104,34 @@ export async function setQuizStatus(
   revalidatePath("/admin/quizzes");
   revalidatePath(`/admin/quizzes/${id}`);
   return { ok: true, id };
+}
+
+export type DeleteResult = { ok: true } | { ok: false; error: string };
+
+/**
+ * Permanently delete a quiz — super_admin only
+ * (docs/HARD_DELETE_ENTITIES_PLAN.md). `quiz_attempts.quiz_id` is `on
+ * delete restrict`, so Postgres blocks this while the quiz has ANY
+ * attempt, including guest/session-link ones (23503) — caught below with
+ * a friendly message. `quiz_questions`/`quiz_assignments`/
+ * `assessment_sessions` all cascade harmlessly (join rows, or a link that
+ * was never actually used).
+ */
+export async function deleteQuizPermanently(id: string): Promise<DeleteResult> {
+  await requireSuperAdmin();
+  const supabase = await createClient();
+  const { error } = await supabase.from("quizzes").delete().eq("id", id);
+  if (error) {
+    if (error.code === "23503") {
+      return {
+        ok: false,
+        error: "This quiz has attempt history and can't be deleted — archive it instead.",
+      };
+    }
+    return { ok: false, error: error.message };
+  }
+  revalidatePath("/admin/quizzes");
+  return { ok: true };
 }
 
 // --- quiz_questions -------------------------------------------------

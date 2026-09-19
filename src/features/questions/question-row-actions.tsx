@@ -3,8 +3,11 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Copy, Loader2, Pencil } from "lucide-react";
-import { duplicateQuestion } from "@/features/questions/actions";
+import { Copy, Loader2, Pencil, Trash2 } from "lucide-react";
+import {
+  deleteQuestionPermanently,
+  duplicateQuestion,
+} from "@/features/questions/actions";
 import { Button, buttonVariants } from "@/components/ui/button";
 
 /**
@@ -19,7 +22,15 @@ import { Button, buttonVariants } from "@/components/ui/button";
  * `<Link>` that must look like a button — uses `buttonVariants()` as a
  * className directly, same pattern as "+ New question" on this page.
  */
-export function QuestionRowActions({ questionId }: { questionId: string }) {
+export function QuestionRowActions({
+  questionId,
+  questionText,
+  viewerIsSuperAdmin,
+}: {
+  questionId: string;
+  questionText: string | null;
+  viewerIsSuperAdmin: boolean;
+}) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -28,6 +39,18 @@ export function QuestionRowActions({ questionId }: { questionId: string }) {
     setError(null);
     start(async () => {
       const res = await duplicateQuestion(questionId);
+      if (!res.ok) return setError(res.error);
+      router.refresh();
+    });
+  }
+
+  function handleDelete() {
+    const label = questionText || "this question";
+    if (!window.confirm(`Delete "${label}" permanently? This cannot be undone.`))
+      return;
+    setError(null);
+    start(async () => {
+      const res = await deleteQuestionPermanently(questionId);
       if (!res.ok) return setError(res.error);
       router.refresh();
     });
@@ -57,6 +80,19 @@ export function QuestionRowActions({ questionId }: { questionId: string }) {
           )}
           {pending ? "Duplicating…" : "Duplicate"}
         </Button>
+        {viewerIsSuperAdmin ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="text-destructive hover:text-destructive"
+            disabled={pending}
+            onClick={handleDelete}
+          >
+            <Trash2 className="size-3.5" aria-hidden="true" />
+            Delete
+          </Button>
+        ) : null}
       </div>
       {error ? (
         <p className="text-destructive text-xs" role="alert">

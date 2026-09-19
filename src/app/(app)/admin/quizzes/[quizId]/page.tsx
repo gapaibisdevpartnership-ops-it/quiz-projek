@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { requireProfile } from "@/features/auth/service";
 import {
   getQuiz,
   getQuizQuestions,
@@ -24,13 +25,16 @@ export default async function QuizOverviewPage({
   const { quizId } = await params;
   const quiz = await getQuiz(quizId);
   if (!quiz) notFound();
-  const [questions, assignments, users, teams, sessions] = await Promise.all([
-    getQuizQuestions(quizId),
-    listQuizAssignments(quizId),
-    listUsers(),
-    listTeams(),
-    listSessionsForQuiz(quizId),
-  ]);
+  const [profile, questions, assignments, users, teams, sessions] =
+    await Promise.all([
+      requireProfile(),
+      getQuizQuestions(quizId),
+      listQuizAssignments(quizId),
+      listUsers(),
+      listTeams(),
+      listSessionsForQuiz(quizId),
+    ]);
+  const viewerIsSuperAdmin = profile.role === "super_admin";
 
   const facts: [string, string][] = [
     ["Status", quiz.status],
@@ -117,7 +121,11 @@ export default async function QuizOverviewPage({
           <CardTitle>Session links</CardTitle>
         </CardHeader>
         <CardContent>
-          <SessionLinks quizId={quizId} sessions={sessions} />
+          <SessionLinks
+            quizId={quizId}
+            sessions={sessions}
+            viewerIsSuperAdmin={viewerIsSuperAdmin}
+          />
           <p className="text-muted-foreground mt-3 text-xs">
             Anyone who opens a link types their name and takes the quiz
             without a pre-created account — separate from the account-based
@@ -132,7 +140,12 @@ export default async function QuizOverviewPage({
           <CardTitle>Lifecycle</CardTitle>
         </CardHeader>
         <CardContent>
-          <QuizStatusActions quizId={quizId} status={quiz.status} />
+          <QuizStatusActions
+            quizId={quizId}
+            quizTitle={quiz.title}
+            status={quiz.status}
+            viewerIsSuperAdmin={viewerIsSuperAdmin}
+          />
           <p className="text-muted-foreground mt-3 text-xs">
             A quiz needs at least one question before it can be published.
             Archived quizzes cannot start new attempts.
