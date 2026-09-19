@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Link2, Settings2, Users } from "lucide-react";
 import { requireProfile } from "@/features/auth/service";
 import {
   getQuiz,
@@ -11,13 +12,17 @@ import { listQuizAssignments } from "@/features/assignments/service";
 import { listUsers } from "@/features/users/service";
 import { listTeams } from "@/features/teams/service";
 import { listSessionsForQuiz } from "@/features/sessions/service";
-import { QuizStatusActions } from "@/features/quizzes/quiz-status-actions";
+import {
+  QuizPublishButton,
+  QuizStatusActions,
+} from "@/features/quizzes/quiz-status-actions";
 import { QuizAssignments } from "@/features/assignments/quiz-assignments";
 import { SessionLinks } from "@/features/sessions/session-links";
 import { LocalTime } from "@/components/local-time";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const STATUS_VARIANT: Record<string, "default" | "secondary" | "outline"> = {
   draft: "secondary",
@@ -77,7 +82,7 @@ export default async function QuizOverviewPage({
             <p className="text-muted-foreground text-sm">{quiz.description}</p>
           ) : null}
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline" asChild>
             <Link href={`/admin/quizzes/${quizId}/edit`}>Edit settings</Link>
           </Button>
@@ -86,9 +91,10 @@ export default async function QuizOverviewPage({
               Edit questions
             </Link>
           </Button>
-          <Button asChild>
+          <Button variant="outline" asChild>
             <Link href={`/admin/quizzes/${quizId}/preview`}>Preview</Link>
           </Button>
+          <QuizPublishButton quizId={quizId} status={quiz.status} />
         </div>
       </div>
 
@@ -108,60 +114,85 @@ export default async function QuizOverviewPage({
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Assignments</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <QuizAssignments
-            quizId={quizId}
-            assignments={assignments}
-            users={users}
-            teams={teams}
-          />
-          <p className="text-muted-foreground mt-3 text-xs">
-            Sales users see the quiz only once it is <strong>published</strong>{" "}
-            and assigned to them or one of their teams.
-          </p>
-        </CardContent>
-      </Card>
+      <Tabs defaultValue="assignments">
+        <TabsList>
+          <TabsTrigger value="assignments" className="gap-1.5">
+            <Users aria-hidden="true" />
+            Assignments
+            {assignments.length ? (
+              <Badge variant="secondary" className="ml-1">
+                {assignments.length}
+              </Badge>
+            ) : null}
+          </TabsTrigger>
+          <TabsTrigger value="sessions" className="gap-1.5">
+            <Link2 aria-hidden="true" />
+            Session links
+            {sessions.length ? (
+              <Badge variant="secondary" className="ml-1">
+                {sessions.length}
+              </Badge>
+            ) : null}
+          </TabsTrigger>
+          <TabsTrigger value="lifecycle" className="gap-1.5">
+            <Settings2 aria-hidden="true" />
+            Lifecycle
+          </TabsTrigger>
+        </TabsList>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Session links</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <SessionLinks
-            quizId={quizId}
-            sessions={sessions}
-            viewerIsSuperAdmin={viewerIsSuperAdmin}
-          />
-          <p className="text-muted-foreground mt-3 text-xs">
-            Anyone who opens a link types their name and takes the quiz
-            without a pre-created account — separate from the account-based
-            assignments above. A quiz needs to be <strong>published</strong>{" "}
-            for links to work.
-          </p>
-        </CardContent>
-      </Card>
+        <TabsContent value="assignments">
+          <Card>
+            <CardContent className="pt-6">
+              <QuizAssignments
+                quizId={quizId}
+                assignments={assignments}
+                users={users}
+                teams={teams}
+              />
+              <p className="text-muted-foreground mt-3 text-xs">
+                Sales users see the quiz only once it is{" "}
+                <strong>published</strong> and assigned to them or one of
+                their teams.
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Lifecycle</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <QuizStatusActions
-            quizId={quizId}
-            quizTitle={quiz.title}
-            status={quiz.status}
-            viewerIsSuperAdmin={viewerIsSuperAdmin}
-          />
-          <p className="text-muted-foreground mt-3 text-xs">
-            A quiz needs at least one question before it can be published.
-            Archived quizzes cannot start new attempts.
-          </p>
-        </CardContent>
-      </Card>
+        <TabsContent value="sessions">
+          <Card>
+            <CardContent className="pt-6">
+              <SessionLinks
+                quizId={quizId}
+                sessions={sessions}
+                viewerIsSuperAdmin={viewerIsSuperAdmin}
+              />
+              <p className="text-muted-foreground mt-3 text-xs">
+                Anyone who opens a link types their name and takes the quiz
+                without a pre-created account — separate from the
+                account-based assignments above. A quiz needs to be{" "}
+                <strong>published</strong> for links to work.
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="lifecycle">
+          <Card>
+            <CardContent className="pt-6">
+              <QuizStatusActions
+                quizId={quizId}
+                quizTitle={quiz.title}
+                status={quiz.status}
+                viewerIsSuperAdmin={viewerIsSuperAdmin}
+              />
+              <p className="text-muted-foreground mt-3 text-xs">
+                A quiz needs at least one question before it can be
+                published. Archived quizzes cannot start new attempts.
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

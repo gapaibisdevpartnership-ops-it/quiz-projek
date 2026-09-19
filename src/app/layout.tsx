@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "GAPAI Mentorship",
-  description: "Training, assessment and analytics for the GAPAI mentorship program.",
+  title: "Quiz Sales System",
+  description: "Training, assessment and analytics for the Quiz Sales System.",
 };
 
 // Runs before first paint: applies the saved theme (or the OS preference) so the

@@ -1,12 +1,20 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ChevronLeft } from "lucide-react";
 import { requireProfile } from "@/features/auth/service";
 import { isAdminRole } from "@/lib/constants";
 import { getMyAssignedQuiz } from "@/features/assignments/service";
 import { getQuiz } from "@/features/quizzes/service";
 import { listMyAttempts } from "@/features/attempts/service";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { LocalTime } from "@/components/local-time";
@@ -30,21 +38,88 @@ export default async function QuizDetailPage({
 
   const attempts = admin ? [] : await listMyAttempts(quizId);
   const inProgress = attempts.find((a) => a.status === "in_progress");
+  const finished = attempts.filter((a) => a.status !== "in_progress");
   const used = attempts.length;
   const canStart = !admin && (inProgress || used < quiz.maxAttempts);
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">{quiz.title}</h1>
-        <Link className="text-sm underline" href="/quizzes">
-          Back
-        </Link>
-      </div>
+  const facts: [string, ReactNode][] = [
+    ["Passing score", `${quiz.passingScore}%`],
+    [
+      "Duration",
+      quiz.durationMinutes ? `${quiz.durationMinutes} minutes` : "Untimed",
+    ],
+    ["Attempts allowed", String(quiz.maxAttempts)],
+  ];
+  if (quiz.startAt) facts.push(["Opens", <LocalTime key="s" iso={quiz.startAt} />]);
+  if (quiz.endAt) facts.push(["Closes", <LocalTime key="e" iso={quiz.endAt} />]);
 
-      {quiz.description ? (
-        <p className="text-muted-foreground text-sm">{quiz.description}</p>
-      ) : null}
+  return (
+    <div className="mx-auto max-w-2xl space-y-6">
+      <Link
+        href="/quizzes"
+        className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm"
+      >
+        <ChevronLeft className="size-4" aria-hidden="true" />
+        Back to quizzes
+      </Link>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-xl">{quiz.title}</CardTitle>
+          {quiz.description ? (
+            <CardDescription>{quiz.description}</CardDescription>
+          ) : null}
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3">
+            {facts.map(([k, v]) => (
+              <div key={k}>
+                <dt className="text-muted-foreground text-xs">{k}</dt>
+                <dd className="font-medium">{v}</dd>
+              </div>
+            ))}
+          </dl>
+
+          {admin ? (
+            <p className="text-muted-foreground border-t pt-4 text-sm">
+              Admin preview. Use{" "}
+              <Link
+                className="underline"
+                href={`/admin/quizzes/${quizId}/preview`}
+              >
+                the builder preview
+              </Link>{" "}
+              to see the questions; assigned sales users take it from here.
+            </p>
+          ) : (
+            <div className="space-y-3 border-t pt-4">
+              {inProgress ? (
+                <Button asChild>
+                  <Link href={`/quizzes/${quizId}/attempt/${inProgress.id}`}>
+                    Resume attempt
+                  </Link>
+                </Button>
+              ) : canStart ? (
+                <Button asChild>
+                  <Link href={`/quizzes/${quizId}/start`}>Start quiz</Link>
+                </Button>
+              ) : (
+                <p className="text-sm font-medium">
+                  You have used all {quiz.maxAttempts} attempt
+                  {quiz.maxAttempts === 1 ? "" : "s"}.
+                </p>
+              )}
+              <div className="max-w-48 space-y-1">
+                <Progress value={(used / quiz.maxAttempts) * 100} />
+                <p className="text-muted-foreground text-xs">
+                  {used} of {quiz.maxAttempts} attempt
+                  {quiz.maxAttempts === 1 ? "" : "s"} used
+                </p>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {quiz.instructions ? (
         <Card>
@@ -57,86 +132,52 @@ export default async function QuizDetailPage({
         </Card>
       ) : null}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Details</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ul className="text-muted-foreground space-y-1 text-sm">
-            <li>Passing score: {quiz.passingScore}%</li>
-            <li>
-              Duration:{" "}
-              {quiz.durationMinutes ? `${quiz.durationMinutes} minutes` : "Untimed"}
-            </li>
-            <li>Attempts allowed: {quiz.maxAttempts}</li>
-            {quiz.startAt ? (
-              <li>
-                Opens: <LocalTime iso={quiz.startAt} />
-              </li>
-            ) : null}
-            {quiz.endAt ? (
-              <li>
-                Closes: <LocalTime iso={quiz.endAt} />
-              </li>
-            ) : null}
-          </ul>
-        </CardContent>
-      </Card>
-
-      {admin ? (
-        <p className="text-muted-foreground text-sm">
-          Admin preview. Use{" "}
-          <Link className="underline" href={`/admin/quizzes/${quizId}/preview`}>
-            the builder preview
-          </Link>{" "}
-          to see the questions; assigned sales users take it from here.
-        </p>
-      ) : (
-        <div className="space-y-3">
-          {inProgress ? (
-            <Button asChild>
-              <Link href={`/quizzes/${quizId}/attempt/${inProgress.id}`}>
-                Resume attempt
-              </Link>
-            </Button>
-          ) : canStart ? (
-            <Button asChild>
-              <Link href={`/quizzes/${quizId}/start`}>Start quiz</Link>
-            </Button>
-          ) : (
-            <p className="text-sm font-medium">
-              You have used all {quiz.maxAttempts} attempt
-              {quiz.maxAttempts === 1 ? "" : "s"}.
-            </p>
-          )}
-          <div className="max-w-48 space-y-1">
-            <Progress value={(used / quiz.maxAttempts) * 100} />
-            <p className="text-muted-foreground text-xs">
-              {used} of {quiz.maxAttempts} attempt
-              {quiz.maxAttempts === 1 ? "" : "s"} used
-            </p>
-          </div>
-          {attempts.filter((a) => a.status !== "in_progress").length ? (
+      {finished.length ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Your attempts</CardTitle>
+          </CardHeader>
+          <CardContent>
             <ul className="divide-y text-sm">
-              {attempts
-                .filter((a) => a.status !== "in_progress")
-                .map((a) => (
-                  <li key={a.id} className="flex items-center gap-2 py-1.5">
-                    <Link
-                      className="hover:underline"
-                      href={`/quizzes/${quizId}/result/${a.id}`}
+              {finished.map((a) => (
+                <li
+                  key={a.id}
+                  className="flex items-center justify-between gap-2 py-2"
+                >
+                  <Link
+                    className="hover:underline"
+                    href={`/quizzes/${quizId}/result/${a.id}`}
+                  >
+                    Attempt #{a.attemptNumber}
+                  </Link>
+                  <div className="flex items-center gap-1.5">
+                    {a.percentage != null ? (
+                      <span className="text-muted-foreground">
+                        {a.percentage}%
+                      </span>
+                    ) : null}
+                    <Badge
+                      variant={
+                        a.passed === true
+                          ? "default"
+                          : a.passed === false
+                            ? "destructive"
+                            : "outline"
+                      }
                     >
-                      Attempt #{a.attemptNumber}
-                    </Link>
-                    <Badge variant="outline">
-                      {STATUS_LABEL[a.status] ?? a.status}
+                      {a.passed == null
+                        ? (STATUS_LABEL[a.status] ?? a.status)
+                        : a.passed
+                          ? "Passed"
+                          : "Failed"}
                     </Badge>
-                  </li>
-                ))}
+                  </div>
+                </li>
+              ))}
             </ul>
-          ) : null}
-        </div>
-      )}
+          </CardContent>
+        </Card>
+      ) : null}
     </div>
   );
 }
