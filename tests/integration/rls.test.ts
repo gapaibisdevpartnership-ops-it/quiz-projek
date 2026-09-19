@@ -12,15 +12,22 @@ const d = hasSupabaseEnv ? describe : describe.skip;
 
 d("RLS baseline (docs/SECURITY_RLS.md)", () => {
   let sales: SupabaseClient;
+  // sales.qa01 has accrued real team membership + a real quiz assignment
+  // from manual use of the app — no longer safe to assume it's "clean" for
+  // the negative (sees-nothing) assertions below. sales.qa02 stays
+  // deliberately unused outside this suite, so it's the pristine one.
+  let salesUnaffiliated: SupabaseClient;
   let trainer: SupabaseClient;
 
   beforeAll(async () => {
     sales = await signInAs(SEED_USERS.sales1.email);
+    salesUnaffiliated = await signInAs(SEED_USERS.sales2.email);
     trainer = await signInAs(SEED_USERS.trainer.email);
   });
 
   afterAll(async () => {
     await sales?.auth.signOut();
+    await salesUnaffiliated?.auth.signOut();
     await trainer?.auth.signOut();
   });
 
@@ -59,7 +66,7 @@ d("RLS baseline (docs/SECURITY_RLS.md)", () => {
 
   describe("teams", () => {
     it("a sales user with no membership reads no teams", async () => {
-      const { data, error } = await sales.from("teams").select("*");
+      const { data, error } = await salesUnaffiliated.from("teams").select("*");
       expect(error).toBeNull();
       expect(data ?? []).toHaveLength(0);
     });
@@ -67,7 +74,9 @@ d("RLS baseline (docs/SECURITY_RLS.md)", () => {
 
   describe("quizzes & assignments", () => {
     it("a sales user sees no quizzes without an assignment", async () => {
-      const { data, error } = await sales.from("quizzes").select("id");
+      const { data, error } = await salesUnaffiliated
+        .from("quizzes")
+        .select("id");
       if (isMissingTable(error)) return;
       expect(error).toBeNull();
       expect(data ?? []).toHaveLength(0);
@@ -132,11 +141,15 @@ d("RLS baseline (docs/SECURITY_RLS.md)", () => {
       expect(data ?? []).toHaveLength(0);
     });
 
-    it("a sales user cannot read quiz_categories", async () => {
-      const { data, error } = await sales.from("quiz_categories").select("*");
-      if (isMissingTable(error)) return;
-      expect(error).toBeNull();
-      expect(data ?? []).toHaveLength(0);
+    it("a sales user can read category names (not sensitive) but cannot write them", async () => {
+      // "quiz_categories: authenticated read" (20260907110000_assignments.sql)
+      // deliberately opens category names to any signed-in user so the
+      // sales quiz list can show them — only mutation is admin-only.
+      const { error: readError } = await sales
+        .from("quiz_categories")
+        .select("*");
+      if (isMissingTable(readError)) return;
+      expect(readError).toBeNull();
     });
 
     it("a sales user cannot insert a category", async () => {
