@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { formatCountdown, seededShuffle } from "./shuffle";
+import {
+  clockOffsetMs,
+  formatCountdown,
+  questionRemainingMs,
+  seededShuffle,
+} from "./shuffle";
 
 describe("seededShuffle", () => {
   const items = [1, 2, 3, 4, 5, 6, 7, 8];
@@ -34,5 +39,59 @@ describe("formatCountdown", () => {
 
   it("clamps negatives to zero", () => {
     expect(formatCountdown(-5000)).toBe("00:00");
+  });
+});
+
+describe("clockOffsetMs / questionRemainingMs", () => {
+  it("ticks down as clientNow advances, holding offset fixed", () => {
+    const serverNow = "2026-09-23T10:00:00.000Z";
+    const clientAtLoad = new Date("2026-09-23T10:00:00.000Z").getTime();
+    const offsetMs = clockOffsetMs(serverNow, clientAtLoad);
+
+    const viewedAt = "2026-09-23T10:00:00.000Z";
+    const first = questionRemainingMs({
+      viewedAt,
+      timeLimitSeconds: 30,
+      offsetMs,
+      clientNow: clientAtLoad,
+    });
+    const fiveSecondsLater = questionRemainingMs({
+      viewedAt,
+      timeLimitSeconds: 30,
+      offsetMs,
+      clientNow: clientAtLoad + 5000,
+    });
+    expect(first).toBe(30_000);
+    expect(fiveSecondsLater).toBe(25_000);
+  });
+
+  it("corrects for a client clock that's ahead of the server", () => {
+    // Client thinks it's 10 seconds later than the server does.
+    const serverNow = "2026-09-23T10:00:00.000Z";
+    const clientAtLoad = new Date("2026-09-23T10:00:10.000Z").getTime();
+    const offsetMs = clockOffsetMs(serverNow, clientAtLoad);
+
+    const remaining = questionRemainingMs({
+      viewedAt: "2026-09-23T10:00:00.000Z",
+      timeLimitSeconds: 30,
+      offsetMs,
+      clientNow: clientAtLoad,
+    });
+    // Corrected to the server's view of time: only 0s elapsed, not 10s.
+    expect(remaining).toBe(30_000);
+  });
+
+  it("goes negative once the limit has passed", () => {
+    const serverNow = "2026-09-23T10:00:00.000Z";
+    const clientAtLoad = new Date(serverNow).getTime();
+    const offsetMs = clockOffsetMs(serverNow, clientAtLoad);
+
+    const remaining = questionRemainingMs({
+      viewedAt: "2026-09-23T09:59:00.000Z", // viewed a minute before "now"
+      timeLimitSeconds: 30,
+      offsetMs,
+      clientNow: clientAtLoad,
+    });
+    expect(remaining).toBeLessThan(0);
   });
 });

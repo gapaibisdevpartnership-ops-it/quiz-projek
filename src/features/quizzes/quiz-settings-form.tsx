@@ -46,6 +46,7 @@ export function QuizSettingsForm({
     shuffleAnswers: quiz?.shuffleAnswers ?? false,
     showResult: quiz?.showResult ?? true,
     showCorrectAnswer: quiz?.showCorrectAnswer ?? false,
+    strictTimingEnabled: quiz?.strictTimingEnabled ?? false,
     startAt: toLocalInput(quiz?.startAt ?? null),
     endAt: toLocalInput(quiz?.endAt ?? null),
   });
@@ -67,6 +68,7 @@ export function QuizSettingsForm({
       shuffleAnswers: f.shuffleAnswers,
       showResult: f.showResult,
       showCorrectAnswer: f.showCorrectAnswer,
+      strictTimingEnabled: f.strictTimingEnabled,
       startAt: toIso(f.startAt),
       endAt: toIso(f.endAt),
     };
@@ -89,7 +91,12 @@ export function QuizSettingsForm({
   }
 
   const toggle = (
-    k: "shuffleQuestions" | "shuffleAnswers" | "showResult" | "showCorrectAnswer",
+    k:
+      | "shuffleQuestions"
+      | "shuffleAnswers"
+      | "showResult"
+      | "showCorrectAnswer"
+      | "strictTimingEnabled",
     label: string,
     hint: string,
   ) => (
@@ -253,6 +260,11 @@ export function QuizSettingsForm({
                 "showCorrectAnswer",
                 "Reveal correct answers",
                 "Shown alongside their own answers on the result.",
+              )}
+              {toggle(
+                "strictTimingEnabled",
+                "Realistic timed mode",
+                "Lock each answer once the candidate moves on or its own time limit (set per question) runs out — no going back to edit.",
               )}
             </CardContent>
           </Card>

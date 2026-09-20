@@ -10,8 +10,11 @@ import {
 import { flushSync } from "react-dom";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { Lock } from "lucide-react";
 import type { PlayerData, PlayerQuestion } from "./types";
 import {
+  lockAttemptQuestion,
+  markQuestionViewed,
   saveEssayAnswer,
   saveObjectiveAnswer,
   submitAttempt,
@@ -21,7 +24,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Alert } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
-import { formatCountdown, seededShuffle } from "./shuffle";
+import {
+  clockOffsetMs,
+  formatCountdown,
+  questionRemainingMs,
+  seededShuffle,
+} from "./shuffle";
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 
@@ -44,6 +52,7 @@ export function QuizPlayer({
   const router = useRouter();
   const { attempt, quiz } = data;
   const finalized = attempt.status !== "in_progress";
+  const strict = quiz.strictTimingEnabled;
   const resultHref = `${resultBasePath ?? `/quizzes/${quiz.id}`}/result/${attempt.id}`;
 
   const questions = useMemo(() => {
@@ -76,6 +85,30 @@ export function QuizPlayer({
   const [banner, setBanner] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  // --- realistic timed mode: per-question view/lock ---------------------
+  const [lockedIds, setLockedIds] = useState<Set<string>>(
+    () => new Set(data.questions.filter((x) => x.lockedAt).map((x) => x.id)),
+  );
+  const [viewedAtById, setViewedAtById] = useState<Record<string, string>>(
+    () =>
+      Object.fromEntries(
+        data.questions
+          .filter((x) => x.viewedAt)
+          .map((x) => [x.id, x.viewedAt as string]),
+      ),
+  );
+  const isLocked = useCallback((id: string) => lockedIds.has(id), [lockedIds]);
+
+  const lockQuestion = useCallback(
+    async (target: PlayerQuestion) => {
+      if (!strict || isLocked(target.id)) return;
+      setLockedIds((s) => new Set(s).add(target.id));
+      const res = await lockAttemptQuestion(target.id);
+      if (!res.ok) setBanner(res.error);
+    },
+    [strict, isLocked],
+  );
+
   // --- timer -------------------------------------------------------------
   const deadline = attempt.durationMinutes
     ? new Date(attempt.startedAt).getTime() + attempt.durationMinutes * 60_000
@@ -88,6 +121,8 @@ export function QuizPlayer({
       if (!auto && !window.confirm("Submit this attempt? You cannot change your answers afterward."))
         return;
       setSubmitting(true);
+      const currentQuestion = questions[current];
+      if (currentQuestion) await lockQuestion(currentQuestion);
       const res = await submitAttempt(attempt.id, quiz.id);
       if (!res.ok) {
         setBanner(res.error);
@@ -97,7 +132,17 @@ export function QuizPlayer({
       router.replace(resultHref);
       router.refresh();
     },
-    [attempt.id, quiz.id, finalized, submitting, router, resultHref],
+    [
+      attempt.id,
+      quiz.id,
+      finalized,
+      submitting,
+      router,
+      resultHref,
+      questions,
+      current,
+      lockQuestion,
+    ],
   );
 
   useEffect(() => {
@@ -117,6 +162,90 @@ export function QuizPlayer({
     return () => clearInterval(t);
   }, [deadline, finalized, doSubmit, attempt.serverNow]);
 
+  // Navigate to a question, locking whichever one is being left behind
+  // (only takes effect in strict mode — a no-op lock otherwise).
+  const goTo = useCallback(
+    (nextIndex: number) => {
+      const clamped = Math.max(0, Math.min(questions.length - 1, nextIndex));
+      if (clamped !== current) {
+        const leaving = questions[current];
+        if (leaving) void lockQuestion(leaving);
+      }
+      setCurrent(clamped);
+    },
+    [current, questions, lockQuestion],
+  );
+
+  // Stamp when the candidate first reaches a question, so its personal
+  // countdown (below) has a stable, reload-safe anchor.
+  useEffect(() => {
+    if (!strict || finalized) return;
+    const q = questions[current];
+    if (!q || viewedAtById[q.id] || isLocked(q.id)) return;
+    let cancelled = false;
+    void markQuestionViewed(q.id).then((res) => {
+      if (cancelled || !res.ok) return;
+      setViewedAtById((s) => ({ ...s, [q.id]: res.viewedAt }));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [strict, finalized, current, questions, viewedAtById, isLocked]);
+
+  // Per-question countdown — only ticks for the current question, since a
+  // question locks (and stops mattering) the moment it's left.
+  const [qRemaining, setQRemaining] = useState<number | null>(null);
+  useEffect(() => {
+    const q = strict && !finalized ? questions[current] : undefined;
+    const viewedAt = q ? viewedAtById[q.id] : undefined;
+    const active = !!(q && !isLocked(q.id) && q.timeLimitSeconds && viewedAt);
+    const offsetMs = clockOffsetMs(attempt.serverNow, Date.now());
+
+    // Returns false once the deadline has passed, so the caller knows not
+    // to (re)arm/keep the interval — expiry is handled once, here, not by
+    // this function reaching into the interval id itself (which would be
+    // unassigned yet on this very first, synchronous call).
+    const tick = (): boolean => {
+      if (!active || !q || !viewedAt || !q.timeLimitSeconds) {
+        setQRemaining(null);
+        return false;
+      }
+      const left = questionRemainingMs({
+        viewedAt,
+        timeLimitSeconds: q.timeLimitSeconds,
+        offsetMs,
+        clientNow: Date.now(),
+      });
+      setQRemaining(left);
+      if (left <= 0) {
+        const isLastQuestion = current === questions.length - 1;
+        if (isLastQuestion) {
+          void lockQuestion(q).then(() => doSubmit(true));
+        } else {
+          goTo(current + 1);
+        }
+        return false;
+      }
+      return true;
+    };
+    if (!tick()) return;
+    const t = setInterval(() => {
+      if (!tick()) clearInterval(t);
+    }, 1000);
+    return () => clearInterval(t);
+  }, [
+    strict,
+    finalized,
+    current,
+    questions,
+    viewedAtById,
+    isLocked,
+    lockQuestion,
+    goTo,
+    doSubmit,
+    attempt.serverNow,
+  ]);
+
   // --- saving ----------------------------------------------------------
   const essayTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
@@ -132,7 +261,7 @@ export function QuizPlayer({
   }
 
   function onToggleOption(q: PlayerQuestion, optionId: string) {
-    if (finalized) return;
+    if (finalized || isLocked(q.id)) return;
     let next: string[] = [];
     // flushSync forces the updater below to run synchronously, so `next` is
     // guaranteed set (from the freshest `prev`) before persistObjective is
@@ -154,7 +283,7 @@ export function QuizPlayer({
   }
 
   function onEssayChange(q: PlayerQuestion, value: string) {
-    if (finalized) return;
+    if (finalized || isLocked(q.id)) return;
     setAnswers((prev) => ({ ...prev, [q.id]: { ...prev[q.id], essay: value } }));
     setSaveState((s) => ({ ...s, [q.id]: "saving" }));
     clearTimeout(essayTimers.current[q.id]);
@@ -185,16 +314,29 @@ export function QuizPlayer({
             className="h-1.5"
           />
         </div>
-        {remaining != null ? (
-          <span
-            className={cn(
-              "rounded-md border px-3 py-1 text-sm font-medium tabular-nums",
-              remaining < 60_000 && "border-destructive text-destructive",
-            )}
-          >
-            {formatCountdown(remaining)}
-          </span>
-        ) : null}
+        <div className="flex items-center gap-2">
+          {qRemaining != null ? (
+            <span
+              className={cn(
+                "rounded-md border px-3 py-1 text-sm font-medium tabular-nums",
+                qRemaining < 10_000 && "border-destructive text-destructive",
+              )}
+              title="Time left for this question"
+            >
+              {formatCountdown(qRemaining)}
+            </span>
+          ) : null}
+          {remaining != null ? (
+            <span
+              className={cn(
+                "rounded-md border px-3 py-1 text-sm font-medium tabular-nums",
+                remaining < 60_000 && "border-destructive text-destructive",
+              )}
+            >
+              {formatCountdown(remaining)}
+            </span>
+          ) : null}
+        </div>
       </header>
 
       {finalized ? (
@@ -214,27 +356,40 @@ export function QuizPlayer({
             x.type === "essay"
               ? a.essay.trim().length > 0
               : a.selected.length > 0;
+          const locked = isLocked(x.id);
           return (
             <button
               key={x.id}
-              onClick={() => setCurrent(i)}
-              aria-label={`Question ${i + 1}${done ? ", answered" : ", not answered"}${i === current ? ", current" : ""}`}
+              onClick={() => goTo(i)}
+              aria-label={`Question ${i + 1}${done ? ", answered" : ", not answered"}${locked ? ", locked" : ""}${i === current ? ", current" : ""}`}
               aria-current={i === current ? "step" : undefined}
               className={cn(
-                "h-8 w-8 rounded border text-xs",
+                "flex h-8 w-8 items-center justify-center rounded border text-xs",
                 i === current && "ring-2 ring-ring",
                 done ? "bg-primary text-primary-foreground" : "bg-background",
+                locked && "opacity-60",
               )}
             >
-              {i + 1}
+              {locked ? (
+                <Lock className="size-3.5" aria-hidden="true" />
+              ) : (
+                i + 1
+              )}
             </button>
           );
         })}
       </div>
 
       <div className="space-y-4 rounded-lg border p-4">
-        <div className="text-muted-foreground text-xs">
-          {q.points} pt · {q.type.replace("_", " ")}
+        <div className="text-muted-foreground flex items-center gap-2 text-xs">
+          <span>
+            {q.points} pt · {q.type.replace("_", " ")}
+          </span>
+          {isLocked(q.id) ? (
+            <span className="inline-flex items-center gap-1 text-foreground">
+              <Lock className="size-3" aria-hidden="true" /> Locked
+            </span>
+          ) : null}
         </div>
         {q.text ? <p className="font-medium">{q.text}</p> : null}
         {q.imageUrl ? (
@@ -253,7 +408,7 @@ export function QuizPlayer({
             className="min-h-40"
             placeholder="Type your answer…"
             value={answers[q.id].essay}
-            disabled={finalized}
+            disabled={finalized || isLocked(q.id)}
             onChange={(e) => onEssayChange(q, e.target.value)}
           />
         ) : (
@@ -272,7 +427,7 @@ export function QuizPlayer({
                       type={q.type === "multiple_choice" ? "checkbox" : "radio"}
                       name={q.id}
                       checked={checked}
-                      disabled={finalized}
+                      disabled={finalized || isLocked(q.id)}
                       onChange={() => onToggleOption(q, o.id)}
                     />
                     {o.imageUrl ? (
@@ -308,12 +463,12 @@ export function QuizPlayer({
         <Button
           variant="outline"
           disabled={current === 0}
-          onClick={() => setCurrent((c) => Math.max(0, c - 1))}
+          onClick={() => goTo(current - 1)}
         >
           Previous
         </Button>
         {current < questions.length - 1 ? (
-          <Button onClick={() => setCurrent((c) => c + 1)}>Next</Button>
+          <Button onClick={() => goTo(current + 1)}>Next</Button>
         ) : (
           <Button
             disabled={finalized || submitting}

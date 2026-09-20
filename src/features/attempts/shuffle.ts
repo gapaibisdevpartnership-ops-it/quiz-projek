@@ -25,3 +25,35 @@ export function formatCountdown(ms: number): string {
   const rem = s % 60;
   return `${String(m).padStart(2, "0")}:${String(rem).padStart(2, "0")}`;
 }
+
+/**
+ * Client/server clock skew, captured once when a timer starts — `clientNow`
+ * minus `offsetMs` gives an ongoing estimate of the server's current time as
+ * real time passes, the same technique the whole-attempt timer uses.
+ */
+export function clockOffsetMs(serverNow: string, clientNow: number): number {
+  return clientNow - new Date(serverNow).getTime();
+}
+
+/**
+ * Milliseconds left on a question's own time limit, anchored on when the
+ * candidate first viewed it (server-stamped, so it survives a reload).
+ * `offsetMs` must come from `clockOffsetMs`, captured once per timer
+ * (not recomputed every tick) — otherwise it cancels itself out and the
+ * countdown never ticks down.
+ */
+export function questionRemainingMs({
+  viewedAt,
+  timeLimitSeconds,
+  offsetMs,
+  clientNow,
+}: {
+  viewedAt: string;
+  timeLimitSeconds: number;
+  offsetMs: number;
+  /** `Date.now()` at the moment of this calculation. */
+  clientNow: number;
+}): number {
+  const deadline = new Date(viewedAt).getTime() + timeLimitSeconds * 1000;
+  return deadline - (clientNow - offsetMs);
+}

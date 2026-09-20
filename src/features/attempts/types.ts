@@ -20,6 +20,9 @@ export interface PlayerQuestion {
     essay: string | null;
     selectedOptionIds: string[];
   } | null;
+  timeLimitSeconds: number | null;
+  viewedAt: string | null;
+  lockedAt: string | null;
 }
 
 export interface PlayerAttemptMeta {
@@ -36,6 +39,11 @@ export interface PlayerAttemptMeta {
 
 export interface PlayerData {
   attempt: PlayerAttemptMeta;
-  quiz: { id: string; title: string; instructions: string | null };
+  quiz: {
+    id: string;
+    title: string;
+    instructions: string | null;
+    strictTimingEnabled: boolean;
+  };
   questions: PlayerQuestion[];
 }
