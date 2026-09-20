@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CheckSquare2, ChevronLeft, Square } from "lucide-react";
+import { requireResultsViewer } from "@/features/auth/service";
+import { isAdminRole } from "@/lib/constants";
 import { getAttemptDetail } from "@/features/results/service";
 import { EssayGradeForm } from "@/features/grading/essay-grade-form";
 import { scoreLabel } from "@/lib/scoring";
+import { LocalTime } from "@/components/local-time";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -15,15 +18,28 @@ const STATUS_LABEL: Record<string, string> = {
   expired: "Expired",
 };
 
+const SCHEDULE_BADGE: Record<
+  "within" | "outside" | "unknown",
+  { label: string; variant: "secondary" | "destructive" | "outline" }
+> = {
+  within: { label: "On schedule", variant: "secondary" },
+  outside: { label: "Outside schedule", variant: "destructive" },
+  unknown: { label: "No schedule window", variant: "outline" },
+};
+
 export default async function AttemptDetailPage({
   params,
 }: {
   params: Promise<{ attemptId: string }>;
 }) {
   const { attemptId } = await params;
-  const d = await getAttemptDetail(attemptId);
+  const [profile, d] = await Promise.all([
+    requireResultsViewer(),
+    getAttemptDetail(attemptId),
+  ]);
   if (!d) notFound();
 
+  const canGrade = isAdminRole(profile.role);
   const hasResult = d.passed != null;
 
   return (
@@ -53,8 +69,19 @@ export default async function AttemptDetailPage({
           <Badge variant={d.status === "submitted" ? "default" : "outline"}>
             {STATUS_LABEL[d.status] ?? d.status}
           </Badge>
+          <Badge variant={SCHEDULE_BADGE[d.scheduleStatus].variant}>
+            {SCHEDULE_BADGE[d.scheduleStatus].label}
+          </Badge>
         </div>
       </div>
+
+      {d.scheduleStatus !== "unknown" ? (
+        <p className="text-muted-foreground text-xs">
+          Started <LocalTime iso={d.startedAt} /> · window{" "}
+          <LocalTime iso={d.scheduleWindow?.startsAt ?? null} /> →{" "}
+          <LocalTime iso={d.scheduleWindow?.endsAt ?? null} />
+        </p>
+      ) : null}
 
       {hasResult ? (
         <div
@@ -152,15 +179,38 @@ export default async function AttemptDetailPage({
                     </div>
                   ) : null}
                   {q.essay?.answerId ? (
-                    <EssayGradeForm
-                      answerId={q.essay.answerId}
-                      attemptId={d.id}
-                      maxPoints={q.points}
-                      currentScore={q.essay.manualScore}
-                      currentFeedback={q.essay.feedback}
-                      keywords={q.keywords}
-                      answerText={q.essay.text}
-                    />
+                    canGrade ? (
+                      <EssayGradeForm
+                        answerId={q.essay.answerId}
+                        attemptId={d.id}
+                        maxPoints={q.points}
+                        currentScore={q.essay.manualScore}
+                        currentFeedback={q.essay.feedback}
+                        keywords={q.keywords}
+                        answerText={q.essay.text}
+                      />
+                    ) : (
+                      <div className="space-y-1 text-xs">
+                        <p>
+                          <span className="text-muted-foreground">
+                            Manual score:{" "}
+                          </span>
+                          <span className="font-medium">
+                            {q.essay.manualScore != null
+                              ? `${q.essay.manualScore} / ${q.points}`
+                              : "Not graded yet"}
+                          </span>
+                        </p>
+                        {q.essay.feedback ? (
+                          <p>
+                            <span className="text-muted-foreground">
+                              Feedback:{" "}
+                            </span>
+                            {q.essay.feedback}
+                          </p>
+                        ) : null}
+                      </div>
+                    )
                   ) : (
                     <p className="text-muted-foreground text-xs">
                       No answer row to grade — the trainee left this blank.

@@ -9,6 +9,7 @@ const ROLE_LABELS: Record<string, string> = {
   super_admin: "Super Admin",
   admin: "Trainer",
   sales: "Sales",
+  spv: "Supervisor",
 };
 
 export default async function AppLayout({

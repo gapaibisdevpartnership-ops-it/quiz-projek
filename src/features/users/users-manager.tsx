@@ -46,6 +46,7 @@ const ROLE_LABEL: Record<string, string> = {
   super_admin: "Super Admin",
   admin: "Trainer",
   sales: "Sales",
+  spv: "Supervisor",
 };
 
 function initials(name: string, email: string) {

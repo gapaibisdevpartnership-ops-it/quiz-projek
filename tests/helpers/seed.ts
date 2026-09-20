@@ -9,4 +9,5 @@ export const SEED_USERS = {
   trainer: { email: "trainer.qa@example.com", role: "admin" },
   sales1: { email: "sales.qa01@example.com", role: "sales" },
   sales2: { email: "sales.qa02@example.com", role: "sales" },
+  spv: { email: "spv.qa@example.com", role: "spv" },
 } as const;

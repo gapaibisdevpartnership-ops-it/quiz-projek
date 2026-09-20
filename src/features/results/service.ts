@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import type { QuestionType } from "@/lib/constants";
+import { evaluateAttemptSchedule, type ScheduleStatus } from "@/lib/schedule";
 
 export interface AttemptListRow {
   id: string;
@@ -13,10 +14,12 @@ export interface AttemptListRow {
   percentage: number | null;
   passed: boolean | null;
   submittedAt: string | null;
+  startedAt: string | null;
+  scheduleStatus: ScheduleStatus;
 }
 
 const ATTEMPT_COLUMNS =
-  "id, quiz_id, user_id, attempt_number, status, percentage, passed, submitted_at";
+  "id, quiz_id, user_id, attempt_number, status, percentage, passed, submitted_at, started_at, session_id";
 
 /** Joins quiz title + user name/guest flag onto raw attempt rows. Shared by
  * every list query below so they don't each re-implement the two lookups. */
@@ -28,14 +31,40 @@ async function hydrateAttempts(
 
   const quizIds = [...new Set(rows.map((r) => r.quiz_id as string))];
   const userIds = [...new Set(rows.map((r) => r.user_id as string))];
-  const [{ data: quizzes }, { data: profiles }] = await Promise.all([
-    supabase.from("quizzes").select("id, title").in("id", quizIds),
-    supabase
-      .from("profiles")
-      .select("user_id, full_name, email, is_guest")
-      .in("user_id", userIds),
-  ]);
+  const sessionIds = [
+    ...new Set(
+      rows
+        .map((r) => r.session_id as string | null)
+        .filter((id): id is string => id != null),
+    ),
+  ];
+  const [{ data: quizzes }, { data: profiles }, { data: sessions }] =
+    await Promise.all([
+      supabase.from("quizzes").select("id, title, start_at, end_at").in("id", quizIds),
+      supabase
+        .from("profiles")
+        .select("user_id, full_name, email, is_guest")
+        .in("user_id", userIds),
+      sessionIds.length
+        ? supabase
+            .from("assessment_sessions")
+            .select("id, starts_at, expires_at")
+            .in("id", sessionIds)
+        : Promise.resolve({ data: [] as { id: string; starts_at: string | null; expires_at: string | null }[] }),
+    ]);
   const title = new Map((quizzes ?? []).map((q) => [q.id, q.title]));
+  const quizWindow = new Map(
+    (quizzes ?? []).map((q) => [
+      q.id,
+      { startsAt: q.start_at as string | null, endsAt: q.end_at as string | null },
+    ]),
+  );
+  const sessionWindow = new Map(
+    (sessions ?? []).map((s) => [
+      s.id,
+      { startsAt: s.starts_at, endsAt: s.expires_at },
+    ]),
+  );
   const name = new Map(
     (profiles ?? []).map((p) => [p.user_id, p.full_name || p.email]),
   );
@@ -43,18 +72,28 @@ async function hydrateAttempts(
     (profiles ?? []).map((p) => [p.user_id, p.is_guest as boolean]),
   );
 
-  return rows.map((r) => ({
-    id: r.id as string,
-    quizId: r.quiz_id as string,
-    quizTitle: title.get(r.quiz_id as string) ?? "Quiz",
-    userName: name.get(r.user_id as string) ?? "User",
-    isGuest: guest.get(r.user_id as string) ?? false,
-    attemptNumber: r.attempt_number as number,
-    status: r.status as string,
-    percentage: (r.percentage as number | null) ?? null,
-    passed: (r.passed as boolean | null) ?? null,
-    submittedAt: (r.submitted_at as string | null) ?? null,
-  }));
+  return rows.map((r) => {
+    const sessionId = r.session_id as string | null;
+    const startedAt = (r.started_at as string | null) ?? null;
+    return {
+      id: r.id as string,
+      quizId: r.quiz_id as string,
+      quizTitle: title.get(r.quiz_id as string) ?? "Quiz",
+      userName: name.get(r.user_id as string) ?? "User",
+      isGuest: guest.get(r.user_id as string) ?? false,
+      attemptNumber: r.attempt_number as number,
+      status: r.status as string,
+      percentage: (r.percentage as number | null) ?? null,
+      passed: (r.passed as boolean | null) ?? null,
+      submittedAt: (r.submitted_at as string | null) ?? null,
+      startedAt,
+      scheduleStatus: evaluateAttemptSchedule({
+        startedAt,
+        session: sessionId ? (sessionWindow.get(sessionId) ?? null) : null,
+        quiz: quizWindow.get(r.quiz_id as string) ?? null,
+      }),
+    };
+  });
 }
 
 export async function listAllAttempts(): Promise<AttemptListRow[]> {
@@ -125,10 +164,14 @@ export interface AttemptDetail {
   percentage: number | null;
   passed: boolean | null;
   submittedAt: string | null;
+  startedAt: string | null;
+  scheduleStatus: ScheduleStatus;
+  scheduleWindow: { startsAt: string | null; endsAt: string | null } | null;
   questions: BreakdownQuestion[];
 }
 
-/** Admin-only full breakdown of one attempt (RLS gives admins SELECT on all). */
+/** Read-only full breakdown of one attempt (RLS gives admin/super_admin/spv
+ * SELECT on all). */
 export async function getAttemptDetail(
   attemptId: string,
 ): Promise<AttemptDetail | null> {
@@ -142,19 +185,31 @@ export async function getAttemptDetail(
   if (error) throw error;
   if (!a) return null;
 
-  const [{ data: quiz }, { data: profile }, { data: aqs }] = await Promise.all([
-    supabase.from("quizzes").select("title").eq("id", a.quiz_id).maybeSingle(),
-    supabase
-      .from("profiles")
-      .select("full_name, email, is_guest")
-      .eq("user_id", a.user_id)
-      .maybeSingle(),
-    supabase
-      .from("attempt_questions")
-      .select("*")
-      .eq("attempt_id", attemptId)
-      .order("sort_order"),
-  ]);
+  const [{ data: quiz }, { data: profile }, { data: aqs }, { data: session }] =
+    await Promise.all([
+      supabase
+        .from("quizzes")
+        .select("title, start_at, end_at")
+        .eq("id", a.quiz_id)
+        .maybeSingle(),
+      supabase
+        .from("profiles")
+        .select("full_name, email, is_guest")
+        .eq("user_id", a.user_id)
+        .maybeSingle(),
+      supabase
+        .from("attempt_questions")
+        .select("*")
+        .eq("attempt_id", attemptId)
+        .order("sort_order"),
+      a.session_id
+        ? supabase
+            .from("assessment_sessions")
+            .select("starts_at, expires_at")
+            .eq("id", a.session_id)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
+    ]);
 
   const aqIds = (aqs ?? []).map((q) => q.id as string);
   const [{ data: opts }, { data: answers }, { data: answerOpts }] =
@@ -227,6 +282,16 @@ export async function getAttemptDetail(
     };
   });
 
+  const scheduleWindow = a.session_id
+    ? {
+        startsAt: (session?.starts_at as string | null) ?? null,
+        endsAt: (session?.expires_at as string | null) ?? null,
+      }
+    : {
+        startsAt: (quiz?.start_at as string | null) ?? null,
+        endsAt: (quiz?.end_at as string | null) ?? null,
+      };
+
   return {
     id: a.id,
     quizId: a.quiz_id,
@@ -243,6 +308,13 @@ export async function getAttemptDetail(
     percentage: a.percentage,
     passed: a.passed,
     submittedAt: a.submitted_at,
+    startedAt: a.started_at,
+    scheduleStatus: evaluateAttemptSchedule({
+      startedAt: a.started_at,
+      session: a.session_id ? scheduleWindow : null,
+      quiz: a.session_id ? null : scheduleWindow,
+    }),
+    scheduleWindow,
     questions,
   };
 }

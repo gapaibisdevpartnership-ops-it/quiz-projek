@@ -1,11 +1,16 @@
 // Central business constants. Avoid scattered magic strings (docs/CONVENTIONS.md).
 
-export const ROLES = ["super_admin", "admin", "sales"] as const;
+export const ROLES = ["super_admin", "admin", "sales", "spv"] as const;
 export type Role = (typeof ROLES)[number];
 
 export const ADMIN_ROLES: readonly Role[] = ["super_admin", "admin"];
 export function isAdminRole(role: Role | null | undefined): boolean {
   return !!role && ADMIN_ROLES.includes(role);
+}
+
+/** admin/super_admin (full access) or spv (read-only results). */
+export function isResultsViewerRole(role: Role | null | undefined): boolean {
+  return isAdminRole(role) || role === "spv";
 }
 
 export const USER_STATUSES = ["active", "inactive"] as const;

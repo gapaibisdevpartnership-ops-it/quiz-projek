@@ -18,17 +18,20 @@ d("RLS baseline (docs/SECURITY_RLS.md)", () => {
   // deliberately unused outside this suite, so it's the pristine one.
   let salesUnaffiliated: SupabaseClient;
   let trainer: SupabaseClient;
+  let spv: SupabaseClient;
 
   beforeAll(async () => {
     sales = await signInAs(SEED_USERS.sales1.email);
     salesUnaffiliated = await signInAs(SEED_USERS.sales2.email);
     trainer = await signInAs(SEED_USERS.trainer.email);
+    spv = await signInAs(SEED_USERS.spv.email);
   });
 
   afterAll(async () => {
     await sales?.auth.signOut();
     await salesUnaffiliated?.auth.signOut();
     await trainer?.auth.signOut();
+    await spv?.auth.signOut();
   });
 
   describe("profiles", () => {
@@ -157,6 +160,59 @@ d("RLS baseline (docs/SECURITY_RLS.md)", () => {
         .from("quiz_categories")
         .insert({ name: "hacky" });
       if (isMissingTable(error)) return;
+      expect(error).not.toBeNull();
+    });
+  });
+
+  describe("spv (read-only results viewer)", () => {
+    it("can read quiz_attempts and the essay breakdown tables", async () => {
+      const [attempts, answers, aqs, aqOpts] = await Promise.all([
+        spv.from("quiz_attempts").select("id"),
+        spv.from("attempt_answers").select("id"),
+        spv.from("attempt_questions").select("id"),
+        spv.from("attempt_question_options").select("id"),
+      ]);
+      for (const { error } of [attempts, answers, aqs, aqOpts]) {
+        if (isMissingTable(error)) continue;
+        expect(error).toBeNull();
+      }
+    });
+
+    it("can read quizzes and profiles (needed to render the results list)", async () => {
+      const [quizzes, profiles] = await Promise.all([
+        spv.from("quizzes").select("id, title"),
+        spv.from("profiles").select("user_id, full_name"),
+      ]);
+      expect(quizzes.error).toBeNull();
+      expect(profiles.error).toBeNull();
+      expect((profiles.data ?? []).length).toBeGreaterThanOrEqual(4);
+    });
+
+    it("cannot insert/update/delete any admin-owned table", async () => {
+      const inserts = await Promise.all([
+        spv.from("quizzes").insert({ title: "hacky" }),
+        spv.from("questions").insert({ question_text: "hacky" }),
+        spv.from("teams").insert({ name: "hacky" }),
+        spv.from("quiz_categories").insert({ name: "hacky" }),
+      ]);
+      for (const { error } of inserts) {
+        if (isMissingTable(error)) continue;
+        expect(error).not.toBeNull();
+      }
+    });
+
+    it("cannot change its own role via admin_update_user", async () => {
+      const { data: me } = await spv
+        .from("profiles")
+        .select("user_id, full_name")
+        .eq("email", SEED_USERS.spv.email)
+        .single();
+      const { error } = await spv.rpc("admin_update_user", {
+        target_user_id: me!.user_id,
+        new_full_name: me!.full_name,
+        new_role: "super_admin",
+        new_status: "active",
+      });
       expect(error).not.toBeNull();
     });
   });

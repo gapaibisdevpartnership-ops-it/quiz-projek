@@ -44,12 +44,13 @@ export async function signInAction(
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  let role: string | null = null;
   if (user) {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("status")
+      .select("status, role")
       .eq("user_id", user.id)
-      .maybeSingle<{ status: string }>();
+      .maybeSingle<{ status: string; role: string }>();
     if (profile && profile.status !== "active") {
       await supabase.auth.signOut();
       return {
@@ -57,10 +58,13 @@ export async function signInAction(
           "Your account is inactive. Contact your administrator for access.",
       };
     }
+    role = profile?.role ?? null;
   }
 
   revalidatePath("/", "layout");
-  redirect("/dashboard");
+  // Supervisors go straight to results — they have no use for the
+  // quiz-taker-oriented /dashboard.
+  redirect(role === "spv" ? "/admin/results" : "/dashboard");
 }
 
 export async function signOutAction(): Promise<void> {

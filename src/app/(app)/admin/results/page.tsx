@@ -19,6 +19,15 @@ const STATUS_LABEL: Record<string, string> = {
   expired: "Expired",
 };
 
+const SCHEDULE_BADGE: Record<
+  "within" | "outside" | "unknown",
+  { label: string; variant: "secondary" | "destructive" | "outline" }
+> = {
+  within: { label: "On schedule", variant: "secondary" },
+  outside: { label: "Outside schedule", variant: "destructive" },
+  unknown: { label: "—", variant: "outline" },
+};
+
 export default async function ResultsPage() {
   const attempts = await listAllAttempts();
 
@@ -46,6 +55,7 @@ export default async function ResultsPage() {
                   <TableHead>Status</TableHead>
                   <TableHead>Score</TableHead>
                   <TableHead>Result</TableHead>
+                  <TableHead>Schedule</TableHead>
                   <TableHead>Submitted</TableHead>
                 </TableRow>
               </TableHeader>
@@ -91,6 +101,11 @@ export default async function ResultsPage() {
                           {a.passed ? "Passed" : "Failed"}
                         </Badge>
                       )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={SCHEDULE_BADGE[a.scheduleStatus].variant}>
+                        {SCHEDULE_BADGE[a.scheduleStatus].label}
+                      </Badge>
                     </TableCell>
                     <TableCell className="text-muted-foreground text-xs">
                       <LocalTime iso={a.submittedAt} />

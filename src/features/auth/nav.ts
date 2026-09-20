@@ -25,6 +25,11 @@ const ADMIN_NAV: NavItem[] = [
   { href: "/admin/analytics", label: "Analytics" },
 ];
 
+// Supervisors only ever open results — no create/manage flow, no
+// Dashboard (built for quiz-takers, not a fit for spv).
+const SPV_NAV: NavItem[] = [{ href: "/admin/results", label: "Results" }];
+
 export function navForRole(role: Role): NavItem[] {
+  if (role === "spv") return SPV_NAV;
   return isAdminRole(role) ? ADMIN_NAV : SALES_NAV;
 }

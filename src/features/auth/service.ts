@@ -3,7 +3,7 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { mapProfile, type Profile, type ProfileRow } from "@/types/domain";
-import { isAdminRole } from "@/lib/constants";
+import { isAdminRole, isResultsViewerRole } from "@/lib/constants";
 
 /**
  * Current signed-in user's profile, or null. Cached per request.
@@ -46,5 +46,12 @@ export async function requireAdmin(): Promise<Profile> {
 export async function requireSuperAdmin(): Promise<Profile> {
   const profile = await requireProfile();
   if (profile.role !== "super_admin") redirect("/dashboard");
+  return profile;
+}
+
+/** Require an admin/trainer or spv (read-only results viewer) profile. */
+export async function requireResultsViewer(): Promise<Profile> {
+  const profile = await requireProfile();
+  if (!isResultsViewerRole(profile.role)) redirect("/dashboard");
   return profile;
 }
