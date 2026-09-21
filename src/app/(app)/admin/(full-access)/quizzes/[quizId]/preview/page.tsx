@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getQuiz, getQuizPreviewItems } from "@/features/quizzes/service";
 import { QuestionRenderer } from "@/features/questions/renderer";
+import { renderRichText } from "@/lib/rich-text";
 
 export default async function QuizPreviewPage({
   params,
@@ -29,7 +30,7 @@ export default async function QuizPreviewPage({
 
       {quiz.instructions ? (
         <div className="rounded-md border bg-muted/40 p-4 text-sm">
-          {quiz.instructions}
+          {renderRichText(quiz.instructions)}
         </div>
       ) : null}
 

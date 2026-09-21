@@ -177,6 +177,10 @@ export function QuizSettingsForm({
                 value={f.instructions}
                 onChange={(e) => set("instructions", e.target.value)}
               />
+              <p className="text-muted-foreground text-xs">
+                Press Enter for a new line. Use **text** for bold and *text*
+                for italic.
+              </p>
             </div>
             <div className="space-y-2">
               <Label>Category</Label>

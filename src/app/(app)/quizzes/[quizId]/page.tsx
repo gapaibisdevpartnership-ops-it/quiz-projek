@@ -6,6 +6,7 @@ import { requireProfile } from "@/features/auth/service";
 import { isAdminRole } from "@/lib/constants";
 import { getMyAssignedQuiz } from "@/features/assignments/service";
 import { getQuiz } from "@/features/quizzes/service";
+import { renderRichText } from "@/lib/rich-text";
 import { listMyAttempts } from "@/features/attempts/service";
 import { Button } from "@/components/ui/button";
 import {
@@ -127,7 +128,7 @@ export default async function QuizDetailPage({
             <CardTitle className="text-base">Instructions</CardTitle>
           </CardHeader>
           <CardContent className="text-sm whitespace-pre-wrap">
-            {quiz.instructions}
+            {renderRichText(quiz.instructions)}
           </CardContent>
         </Card>
       ) : null}

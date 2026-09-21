@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { renderRichText } from "@/lib/rich-text";
 
 export function CandidateEntryForm({
   token,
@@ -38,7 +39,9 @@ export function CandidateEntryForm({
       </CardHeader>
       <CardContent className="space-y-4">
         {session.instructions ? (
-          <p className="text-muted-foreground text-sm">{session.instructions}</p>
+          <p className="text-muted-foreground text-sm">
+            {renderRichText(session.instructions)}
+          </p>
         ) : null}
         {session.durationMinutes ? (
           <p className="text-muted-foreground text-sm">
