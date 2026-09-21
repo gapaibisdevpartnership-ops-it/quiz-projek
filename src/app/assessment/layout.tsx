@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
 import { BrandMark } from "@/components/brand-mark";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { buttonVariants } from "@/components/ui/button";
 
 /**
  * Deliberately outside the (app) route group — no requireProfile(), no
@@ -18,7 +20,15 @@ export default function AssessmentLayout({
     <div className="min-h-dvh bg-muted/40">
       <header className="flex h-14 items-center justify-between border-b bg-background px-4">
         <BrandMark className="text-sm" />
-        <ThemeToggle />
+        <div className="flex items-center gap-1">
+          <Link
+            href="/login"
+            className={buttonVariants({ variant: "ghost", size: "sm" })}
+          >
+            Staff login
+          </Link>
+          <ThemeToggle />
+        </div>
       </header>
       <div className="mx-auto w-full max-w-2xl p-4 sm:p-6">{children}</div>
     </div>
