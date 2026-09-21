@@ -62,7 +62,53 @@ A quiz can be assigned to:
 - an individual user;
 - a team.
 
-Starting a quiz requires an active assignment.
+Starting a quiz requires an active assignment (account-based flow only —
+a session-link/guest attempt is authorized by the link's token instead,
+not an assignment row).
+
+## Session Links (guest, no-account access)
+
+1. A session link is always scoped to exactly one quiz.
+2. A candidate is identified only by the full name they type — no
+   account, no password (backed by Supabase Anonymous Auth).
+3. A link may restrict who can use it (a name roster), cap total
+   distinct candidates, and/or override the quiz's own `max_attempts`
+   per candidate — all optional, unset means unrestricted/inherit.
+4. A link may have a scheduled open time and/or expiry; starting outside
+   that window is rejected server-side, not just hidden in the UI.
+5. Exactly one session link app-wide may be the **homepage** — the plain
+   domain root always serves that link's entry screen. Marking a new one
+   homepage automatically un-marks the previous one (enforced by a
+   partial unique index, not just application logic).
+6. Deleting a session link never deletes the attempts made through
+   it — they keep their full result, just lose the "which link"
+   attribution.
+
+## Realistic Timed Mode (per-question time limit + lock)
+
+Opt-in per quiz (`quizzes.strict_timing_enabled`, default off — every
+quiz not explicitly enabling this behaves exactly as before).
+
+1. A trainer may set an optional time limit (seconds) on each question
+   within a quiz (`quiz_questions.time_limit_seconds`), snapshotted onto
+   `attempt_questions` at attempt-start so a later edit never changes an
+   attempt already in progress.
+2. A question's countdown starts from when the candidate first reaches
+   it (`attempt_questions.viewed_at`), not from attempt start — it
+   survives a page reload.
+3. A question locks (`attempt_questions.locked_at`) the moment the
+   candidate moves *forward* past it (Next, or jumping ahead) or its own
+   timer expires, or the whole attempt is submitted. Stepping *back* to
+   glance at an earlier, already-locked question never locks whatever
+   the candidate is still actively on.
+4. Once locked, `save_objective_answer`/`save_essay_answer` reject
+   further writes to that question server-side (`QUESTION_LOCKED`) —
+   this is the real guarantee; the UI disabling inputs is just a
+   reflection of it.
+5. A locked question's answer stays visible (read-only) if the candidate
+   navigates back to it — never hidden.
+6. If a question's own timer expires, the player auto-advances to the
+   next question (or auto-submits, if it was the last one).
 
 ## Attempts
 
@@ -98,6 +144,18 @@ Refreshing or closing the browser must not reset existing server-side progress.
 ## Timer
 
 Timer authority is based on server timestamps, not browser state.
+
+## Schedule Validity (results indicator)
+
+Every attempt on `/admin/results` shows a computed status — **within**,
+**outside**, or **unknown** (no comparable window) — from comparing
+`quiz_attempts.started_at` against its session link's
+`starts_at`/`expires_at` (falling back to the quiz's own
+`start_at`/`end_at` for account-based, non-session attempts, or when the
+session was deleted — `on delete set null`). This is purely
+informational: it never mutates `passed`, the score, or any stored
+column. A trainer/SPV decides by eye whether an out-of-window result
+should count.
 
 ## Submission
 
