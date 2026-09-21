@@ -12,6 +12,7 @@ import {
   removeQuizQuestion,
   reorderQuizQuestions,
   setQuizQuestionPoints,
+  setQuizQuestionTimeLimit,
 } from "@/features/quizzes/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -121,6 +122,25 @@ export function QuizQuestionsBuilder({
                         const v = Number(e.target.value);
                         if (v > 0 && v !== a.points)
                           run(() => setQuizQuestionPoints(quizId, a.id, v));
+                      }}
+                    />
+                  </label>
+                  <label className="flex items-center gap-1 text-xs">
+                    Time limit (s)
+                    <Input
+                      type="number"
+                      min={1}
+                      placeholder="No limit"
+                      defaultValue={a.timeLimitSeconds ?? ""}
+                      className="h-8 w-24"
+                      disabled={pending}
+                      onBlur={(e) => {
+                        const raw = e.target.value.trim();
+                        const v = raw === "" ? null : Number(raw);
+                        if (v !== a.timeLimitSeconds && (v === null || v > 0))
+                          run(() =>
+                            setQuizQuestionTimeLimit(quizId, a.id, v),
+                          );
                       }}
                     />
                   </label>

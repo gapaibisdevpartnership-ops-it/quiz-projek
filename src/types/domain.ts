@@ -190,6 +190,7 @@ export interface Quiz {
   shuffleAnswers: boolean;
   showResult: boolean;
   showCorrectAnswer: boolean;
+  strictTimingEnabled: boolean;
   startAt: string | null;
   endAt: string | null;
   createdBy: string | null;
@@ -203,6 +204,7 @@ export interface QuizQuestion {
   questionId: string;
   points: number;
   sortOrder: number;
+  timeLimitSeconds: number | null;
 }
 
 /** A quiz_questions row joined with its bank question, for the builder UI. */
@@ -225,6 +227,7 @@ export interface QuizRow {
   shuffle_answers: boolean;
   show_result: boolean;
   show_correct_answer: boolean;
+  strict_timing_enabled: boolean;
   start_at: string | null;
   end_at: string | null;
   created_by: string | null;
@@ -238,6 +241,7 @@ export interface QuizQuestionRow {
   question_id: string;
   points: number;
   sort_order: number;
+  time_limit_seconds: number | null;
 }
 
 export function mapQuiz(row: QuizRow): Quiz {
@@ -256,6 +260,7 @@ export function mapQuiz(row: QuizRow): Quiz {
     shuffleAnswers: row.shuffle_answers,
     showResult: row.show_result,
     showCorrectAnswer: row.show_correct_answer,
+    strictTimingEnabled: row.strict_timing_enabled,
     startAt: row.start_at,
     endAt: row.end_at,
     createdBy: row.created_by,
@@ -271,6 +276,7 @@ export function mapQuizQuestion(row: QuizQuestionRow): QuizQuestion {
     questionId: row.question_id,
     points: Number(row.points),
     sortOrder: row.sort_order,
+    timeLimitSeconds: row.time_limit_seconds,
   };
 }
 

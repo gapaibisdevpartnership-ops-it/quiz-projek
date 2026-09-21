@@ -12,6 +12,7 @@ const MESSAGES: Record<string, string> = {
   OPTION_NOT_IN_QUESTION: "Invalid answer option.",
   WRONG_QUESTION_TYPE: "Wrong answer type for this question.",
   FORBIDDEN: "You cannot modify this attempt.",
+  QUESTION_LOCKED: "This question is locked and can no longer be changed.",
 };
 
 /** Map a Postgres RPC error message to a readable one. */

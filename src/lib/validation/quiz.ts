@@ -27,6 +27,7 @@ export const quizSettingsSchema = z
     shuffleAnswers: z.boolean().default(false),
     showResult: z.boolean().default(true),
     showCorrectAnswer: z.boolean().default(false),
+    strictTimingEnabled: z.boolean().default(false),
     startAt: z.string().datetime().nullable().optional(),
     endAt: z.string().datetime().nullable().optional(),
   })
@@ -38,4 +39,12 @@ export type QuizSettingsInput = z.infer<typeof quizSettingsSchema>;
 
 export const quizQuestionPointsSchema = z.object({
   points: z.coerce.number().positive("Points must be greater than 0."),
+});
+
+export const quizQuestionTimeLimitSchema = z.object({
+  timeLimitSeconds: z.coerce
+    .number()
+    .int()
+    .positive("Time limit must be greater than 0 seconds.")
+    .nullable(),
 });

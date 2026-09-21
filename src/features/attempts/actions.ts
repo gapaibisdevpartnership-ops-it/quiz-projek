@@ -49,6 +49,30 @@ export async function saveEssayAnswer(
   return { ok: true };
 }
 
+export async function markQuestionViewed(
+  attemptQuestionId: string,
+): Promise<{ ok: true; viewedAt: string } | { ok: false; error: string }> {
+  await requireProfile();
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("mark_question_viewed", {
+    target_attempt_question_id: attemptQuestionId,
+  });
+  if (error) return { ok: false, error: attemptErrorMessage(error.message) };
+  return { ok: true, viewedAt: data as string };
+}
+
+export async function lockAttemptQuestion(
+  attemptQuestionId: string,
+): Promise<SaveResult> {
+  await requireProfile();
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("lock_attempt_question", {
+    target_attempt_question_id: attemptQuestionId,
+  });
+  if (error) return { ok: false, error: attemptErrorMessage(error.message) };
+  return { ok: true };
+}
+
 export type SubmitResult =
   | { ok: true; status: string }
   | { ok: false; error: string };

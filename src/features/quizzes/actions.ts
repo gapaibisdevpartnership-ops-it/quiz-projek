@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAdmin, requireSuperAdmin } from "@/features/auth/service";
 import {
   quizQuestionPointsSchema,
+  quizQuestionTimeLimitSchema,
   quizSettingsSchema,
   type QuizSettingsInput,
 } from "@/lib/validation/quiz";
@@ -28,6 +29,7 @@ function rowFromSettings(input: QuizSettingsInput) {
     shuffle_answers: input.shuffleAnswers,
     show_result: input.showResult,
     show_correct_answer: input.showCorrectAnswer,
+    strict_timing_enabled: input.strictTimingEnabled,
     start_at: input.startAt ?? null,
     end_at: input.endAt ?? null,
   };
@@ -200,6 +202,27 @@ export async function setQuizQuestionPoints(
   const { error } = await supabase
     .from("quiz_questions")
     .update({ points: parsed.data.points })
+    .eq("id", quizQuestionId)
+    .eq("quiz_id", quizId);
+  if (error) return { ok: false, error: error.message };
+  revalidatePath(`/admin/quizzes/${quizId}/questions`);
+  return { ok: true, id: quizId };
+}
+
+export async function setQuizQuestionTimeLimit(
+  quizId: string,
+  quizQuestionId: string,
+  timeLimitSeconds: number | null,
+): Promise<QuizMutationResult> {
+  await requireAdmin();
+  const parsed = quizQuestionTimeLimitSchema.safeParse({ timeLimitSeconds });
+  if (!parsed.success)
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid." };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("quiz_questions")
+    .update({ time_limit_seconds: parsed.data.timeLimitSeconds })
     .eq("id", quizQuestionId)
     .eq("quiz_id", quizId);
   if (error) return { ok: false, error: error.message };
