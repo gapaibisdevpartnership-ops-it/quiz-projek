@@ -57,6 +57,13 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/profile") ||
     pathname.startsWith("/admin");
 
+  // A guest's Supabase Anonymous Auth session is still a "user" here, but
+  // it must never count as "already logged in" — otherwise a guest who
+  // finishes a quiz and clicks Staff login gets bounced straight back into
+  // the guest flow by the check below, unable to ever reach the real login
+  // form (only clearing cookies would "fix" it).
+  const isRealUser = !!user && !user.is_anonymous;
+
   if (!user && isProtected) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
@@ -64,7 +71,7 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user && isAuthRoute) {
+  if (isRealUser && isAuthRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
