@@ -177,7 +177,11 @@ export function QuizPlayer({
   const goTo = useCallback(
     (nextIndex: number) => {
       const clamped = Math.max(0, Math.min(questions.length - 1, nextIndex));
-      if (clamped !== current) {
+      // Only lock the question being left when moving forward past it
+      // (Next, or jumping ahead) — stepping back to glance at an earlier
+      // question must not lock the one you're still actively working on;
+      // its own timeout (if any) is what locks it, not a backward glance.
+      if (clamped > current) {
         const leaving = questions[current];
         if (leaving) void lockQuestion(leaving);
       }
