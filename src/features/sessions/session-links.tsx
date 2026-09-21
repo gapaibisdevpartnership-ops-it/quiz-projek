@@ -9,6 +9,7 @@ import {
   createSession,
   deleteSessionPermanently,
   reopenSession,
+  setAsHomepage,
 } from "@/features/sessions/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -93,6 +94,24 @@ export function SessionLinks({
       if (!res.ok) return setError(res.error);
       toast.success(
         session.status === "active" ? "Link closed" : "Link reopened",
+      );
+      router.refresh();
+    });
+  }
+
+  function toggleHomepage(session: AssessmentSession) {
+    setError(null);
+    start(async () => {
+      const res = await setAsHomepage(
+        quizId,
+        session.id,
+        !session.isDefaultLanding,
+      );
+      if (!res.ok) return setError(res.error);
+      toast.success(
+        session.isDefaultLanding
+          ? "No longer the homepage"
+          : "Set as homepage — anyone visiting the plain domain now sees this link",
       );
       router.refresh();
     });
@@ -220,6 +239,9 @@ export function SessionLinks({
                 <Badge variant={s.status === "active" ? "default" : "outline"}>
                   {s.status}
                 </Badge>
+                {s.isDefaultLanding ? (
+                  <Badge variant="secondary">Homepage</Badge>
+                ) : null}
                 {s.candidateRoster ? (
                   <span className="text-muted-foreground text-xs">
                     {s.candidateRoster.length} allowed name
@@ -272,6 +294,14 @@ export function SessionLinks({
                   onClick={() => toggle(s)}
                 >
                   {s.status === "active" ? "Close" : "Reopen"}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  disabled={pending}
+                  onClick={() => toggleHomepage(s)}
+                >
+                  {s.isDefaultLanding ? "Remove as homepage" : "Set as homepage"}
                 </Button>
                 {viewerIsSuperAdmin ? (
                   <Button

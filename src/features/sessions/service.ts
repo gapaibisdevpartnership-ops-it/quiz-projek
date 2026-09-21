@@ -14,6 +14,7 @@ export interface AssessmentSession {
   candidatesUsed: number;
   status: "active" | "closed";
   createdAt: string;
+  isDefaultLanding: boolean;
 }
 
 export async function listSessionsForQuiz(
@@ -58,5 +59,6 @@ export async function listSessionsForQuiz(
     candidatesUsed: candidatesBySession.get(r.id)?.size ?? 0,
     status: r.status,
     createdAt: r.created_at,
+    isDefaultLanding: r.is_default_landing,
   }));
 }

@@ -14,11 +14,16 @@ export type ValidateResult =
   | { ok: true; session: SessionInfo }
   | { ok: false; error: string };
 
+export type DefaultLandingResult =
+  | { ok: true; token: string; session: SessionInfo }
+  | { ok: false; error: string };
+
 const ERROR_COPY: Record<string, string> = {
   SESSION_NOT_FOUND: "This link isn't valid. Ask the trainer for a new one.",
   SESSION_NOT_STARTED: "This link isn't open yet. Check back later.",
   SESSION_EXPIRED: "This link has expired. Ask the trainer for a new one.",
   QUIZ_NOT_AVAILABLE: "This assessment isn't open right now.",
+  NO_DEFAULT_LINK: "No assessment is open here right now. Check back later.",
 };
 
 export async function validateSessionToken(
@@ -42,6 +47,37 @@ export async function validateSessionToken(
   };
   return {
     ok: true,
+    session: {
+      quizId: d.quizId,
+      quizTitle: d.quizTitle,
+      instructions: d.instructions,
+      durationMinutes: d.durationMinutes,
+      showResult: d.showResult,
+      rosterRequired: d.rosterRequired,
+    },
+  };
+}
+
+/** The one session link a trainer has marked "homepage" — powers `/`. */
+export async function getDefaultLandingSession(): Promise<DefaultLandingResult> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("get_default_landing_session");
+  if (error) {
+    const key = Object.keys(ERROR_COPY).find((k) => error.message.includes(k));
+    return { ok: false, error: key ? ERROR_COPY[key] : "This link isn't valid." };
+  }
+  const d = data as {
+    token: string;
+    quizId: string;
+    quizTitle: string;
+    instructions: string | null;
+    durationMinutes: number | null;
+    showResult: boolean;
+    rosterRequired: boolean;
+  };
+  return {
+    ok: true,
+    token: d.token,
     session: {
       quizId: d.quizId,
       quizTitle: d.quizTitle,

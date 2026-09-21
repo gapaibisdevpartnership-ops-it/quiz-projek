@@ -99,3 +99,23 @@ export async function reopenSession(
   revalidatePath(`/admin/quizzes/${quizId}`);
   return { ok: true };
 }
+
+/** Marks (or unmarks) this session link as the one served at `/`. Only one
+ * link across the whole app can be the homepage at a time — enabling a new
+ * one automatically clears any other (see set_default_landing_session). */
+export async function setAsHomepage(
+  quizId: string,
+  sessionId: string,
+  enabled: boolean,
+): Promise<SessionMutationResult> {
+  await requireAdmin();
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("set_default_landing_session", {
+    target_session_id: sessionId,
+    enabled,
+  });
+  if (error) return { ok: false, error: error.message };
+  revalidatePath(`/admin/quizzes/${quizId}`);
+  revalidatePath("/");
+  return { ok: true };
+}
