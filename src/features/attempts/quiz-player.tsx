@@ -115,6 +115,16 @@ export function QuizPlayer({
     : null;
   const [remaining, setRemaining] = useState<number | null>(null);
 
+  // Client/server clock skew, captured once when the page loads (lazy
+  // initial state, not useMemo — Date.now() is impure and must not run
+  // during render) — NOT recomputed every time the current question
+  // changes, or it would pick up however much real time has passed since
+  // load as if it were clock skew, silently inflating every later
+  // question's remaining time.
+  const [clockOffset] = useState(() =>
+    clockOffsetMs(attempt.serverNow, Date.now()),
+  );
+
   const doSubmit = useCallback(
     async (auto: boolean) => {
       if (finalized || submitting) return;
@@ -199,7 +209,6 @@ export function QuizPlayer({
     const q = strict && !finalized ? questions[current] : undefined;
     const viewedAt = q ? viewedAtById[q.id] : undefined;
     const active = !!(q && !isLocked(q.id) && q.timeLimitSeconds && viewedAt);
-    const offsetMs = clockOffsetMs(attempt.serverNow, Date.now());
 
     // Returns false once the deadline has passed, so the caller knows not
     // to (re)arm/keep the interval — expiry is handled once, here, not by
@@ -213,7 +222,7 @@ export function QuizPlayer({
       const left = questionRemainingMs({
         viewedAt,
         timeLimitSeconds: q.timeLimitSeconds,
-        offsetMs,
+        offsetMs: clockOffset,
         clientNow: Date.now(),
       });
       setQRemaining(left);
@@ -243,7 +252,7 @@ export function QuizPlayer({
     lockQuestion,
     goTo,
     doSubmit,
-    attempt.serverNow,
+    clockOffset,
   ]);
 
   // --- saving ----------------------------------------------------------
