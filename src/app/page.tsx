@@ -29,7 +29,7 @@ export default async function RootPage() {
             href="/login"
             className={buttonVariants({ variant: "ghost", size: "sm" })}
           >
-            Staff login
+            Login
           </Link>
           <ThemeToggle />
         </div>
