@@ -1,16 +1,9 @@
-import { Skeleton } from "@/components/ui/skeleton";
+import { Loader2 } from "lucide-react";
 
 export default function AssessmentLoading() {
   return (
-    <div className="space-y-4 rounded-lg border bg-card p-6 shadow-sm">
-      <Skeleton className="h-5 w-1/2" />
-      <Skeleton className="h-4 w-full" />
-      <Skeleton className="h-4 w-5/6" />
-      <div className="space-y-2 pt-2">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-11 w-full rounded-md" />
-        ))}
-      </div>
+    <div className="flex justify-center py-12">
+      <Loader2 className="text-muted-foreground size-6 animate-spin" />
     </div>
   );
 }

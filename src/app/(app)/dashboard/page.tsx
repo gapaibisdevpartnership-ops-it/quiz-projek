@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import {
   BarChart3,
   BookOpen,
@@ -15,6 +16,8 @@ import { listMyAssignedQuizzes } from "@/features/assignments/service";
 import { StatCard } from "@/components/stat-card";
 import { RecentActivity } from "@/components/recent-activity";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 const ADMIN_LINKS = [
   {
@@ -81,11 +84,15 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      {admin ? <AdminStats /> : <SalesStats />}
+      <Suspense fallback={<StatsSkeleton admin={admin} />}>
+        {admin ? <AdminStats /> : <SalesStats />}
+      </Suspense>
 
       {admin ? (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-          <RecentActivity />
+          <Suspense fallback={<RecentActivitySkeleton />}>
+            <RecentActivity />
+          </Suspense>
           <Card className="h-fit">
             <CardHeader>
               <CardTitle>Quick links</CardTitle>
@@ -193,5 +200,66 @@ async function SalesStats() {
       <StatCard label="Completed" value={finished.length} />
       <StatCard label="Average score" value={avg == null ? "—" : `${avg}%`} />
     </div>
+  );
+}
+
+const ADMIN_STAT_LABELS = [
+  "Active sales",
+  "Published quizzes",
+  "Completed attempts",
+  "Pending reviews",
+  "Average score",
+  "Pass rate",
+];
+
+const SALES_STAT_LABELS = [
+  "Assigned quizzes",
+  "In progress",
+  "Completed",
+  "Average score",
+];
+
+function StatsSkeleton({ admin }: { admin: boolean }) {
+  const labels = admin ? ADMIN_STAT_LABELS : SALES_STAT_LABELS;
+  return (
+    <div
+      className={cn(
+        "grid gap-4",
+        admin
+          ? "sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"
+          : "sm:grid-cols-2 lg:grid-cols-4",
+      )}
+    >
+      {labels.map((label) => (
+        <StatCard key={label} label={label} loading />
+      ))}
+    </div>
+  );
+}
+
+function RecentActivitySkeleton() {
+  return (
+    <Card className="h-full">
+      <CardHeader className="flex-row items-center justify-between">
+        <CardTitle>Recent activity</CardTitle>
+        <span className="text-muted-foreground text-sm">View all</span>
+      </CardHeader>
+      <CardContent>
+        <ul className="divide-y">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <li key={i} className="flex items-center justify-between gap-4 py-2.5">
+              <div className="min-w-0 flex-1 space-y-1.5">
+                <Skeleton className="h-4 w-2/3" />
+                <Skeleton className="h-3 w-1/3" />
+              </div>
+              <div className="flex shrink-0 flex-col items-end gap-1.5">
+                <Skeleton className="h-5 w-16 rounded-full" />
+                <Skeleton className="h-3 w-12" />
+              </div>
+            </li>
+          ))}
+        </ul>
+      </CardContent>
+    </Card>
   );
 }
