@@ -128,6 +128,7 @@ export interface BreakdownQuestion {
   attemptQuestionId: string;
   type: QuestionType;
   text: string | null;
+  imageUrl: string | null;
   points: number;
   sortOrder: number;
   explanation: string | null;
@@ -137,6 +138,7 @@ export interface BreakdownQuestion {
   options: {
     id: string;
     text: string | null;
+    imageUrl: string | null;
     isCorrect: boolean;
     selected: boolean;
   }[];
@@ -256,6 +258,7 @@ export async function getAttemptDetail(
       attemptQuestionId: q.id,
       type: q.question_type,
       text: q.question_text,
+      imageUrl: q.question_image_url,
       points: Number(q.points),
       sortOrder: q.sort_order,
       explanation: q.explanation,
@@ -267,6 +270,7 @@ export async function getAttemptDetail(
         .map((o) => ({
           id: o.id,
           text: o.answer_text,
+          imageUrl: o.image_url,
           isCorrect: o.is_correct,
           selected: selectedOptionIds.has(o.id),
         })),

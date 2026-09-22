@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { CheckSquare2, ChevronLeft, Square } from "lucide-react";
 import { requireResultsViewer } from "@/features/auth/service";
@@ -154,6 +155,16 @@ export default async function AttemptDetailPage({
               </p>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
+              {q.imageUrl ? (
+                <Image
+                  src={q.imageUrl}
+                  alt=""
+                  width={480}
+                  height={320}
+                  className="rounded-md border object-contain"
+                  unoptimized
+                />
+              ) : null}
               {q.type === "essay" ? (
                 <>
                   <div>
@@ -242,7 +253,17 @@ export default async function AttemptDetailPage({
                             aria-hidden="true"
                           />
                         )}
-                        <span>{o.text || "(image)"}</span>
+                        {o.imageUrl ? (
+                          <Image
+                            src={o.imageUrl}
+                            alt=""
+                            width={90}
+                            height={68}
+                            className="rounded border object-cover"
+                            unoptimized
+                          />
+                        ) : null}
+                        <span>{o.text || (o.imageUrl ? "" : "(image)")}</span>
                         {o.isCorrect ? (
                           <Badge className="ml-auto">Correct</Badge>
                         ) : null}
